@@ -27,148 +27,195 @@
 </head>
 <body class="bg-[#f1f5f9] text-slate-700">
 
-    <div id="printOptionsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center no-print p-4">
-        <div class="bg-white p-5 shadow-2xl w-full max-w-xs border-t-4 border-slate-900">
-            <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] mb-3 border-b pb-2 italic">Opsi Cetak Invoice</h3>
-            <div class="space-y-1">
-                <label class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-100 cursor-pointer"><input type="radio" name="printType" value="all" checked><span class="text-[9px] uppercase font-bold">Semua (Jasa & Bahan)</span></label>
-                <label class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-100 cursor-pointer"><input type="radio" name="printType" value="jasa"><span class="text-[9px] uppercase font-bold text-red-600">Hanya Jasa</span></label>
-                <label class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-100 cursor-pointer"><input type="radio" name="printType" value="bahan"><span class="text-[9px] uppercase font-bold text-blue-600">Hanya Bahan</span></label>
-                <div class="flex gap-2 pt-3">
-                    <button onclick="executePrint()" class="flex-1 bg-slate-900 text-white py-2 text-[9px] font-bold uppercase tracking-widest">PRINT</button>
-                    <button onclick="closePrintModal()" class="flex-1 bg-slate-100 text-slate-500 py-2 text-[9px] font-bold uppercase tracking-widest">BATAL</button>
-                </div>
+<div id="printOptionsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center no-print p-4">
+    <div class="bg-white p-5 shadow-2xl w-full max-w-xs border-t-4 border-slate-900">
+        <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] mb-3 border-b pb-2 italic">Opsi Cetak Invoice</h3>
+        <div class="space-y-1">
+            <label class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-100 cursor-pointer"><input type="radio" name="printType" value="all" checked><span class="text-[9px] uppercase font-bold">Semua (Jasa & Bahan)</span></label>
+            <label class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-100 cursor-pointer"><input type="radio" name="printType" value="jasa"><span class="text-[9px] uppercase font-bold text-red-600">Hanya Jasa</span></label>
+            <label class="flex items-center gap-3 p-2 bg-slate-50 border border-slate-100 cursor-pointer"><input type="radio" name="printType" value="bahan"><span class="text-[9px] uppercase font-bold text-blue-600">Hanya Bahan</span></label>
+            <div class="flex gap-2 pt-3">
+                <button onclick="executePrint()" class="flex-1 bg-slate-900 text-white py-2 text-[9px] font-bold uppercase tracking-widest">PRINT</button>
+                <button onclick="closePrintModal()" class="flex-1 bg-slate-100 text-slate-500 py-2 text-[9px] font-bold uppercase tracking-widest">BATAL</button>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="settingsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center no-print p-4">
-        <div class="bg-white p-5 shadow-2xl w-full max-w-md border-t-4 border-blue-600">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] italic underline">Kelola Bengkel & Alamat</h3>
-                <button onclick="closeSettings()" class="text-slate-400 font-bold text-xl">&times;</button>
-            </div>
-            <div class="space-y-3">
-                <input type="text" id="newBengkelName" placeholder="NAMA BENGKEL..." class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] uppercase font-bold">
-                <textarea id="newBengkelAddr" placeholder="ALAMAT LENGKAP..." class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] h-16 italic"></textarea>
-                <button onclick="addNewBengkel()" class="w-full bg-blue-600 text-white py-2 font-bold text-[9px] uppercase">Tambah Bengkel</button>
-                <div class="border-t pt-3">
-                    <div id="bengkelListSettings" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
-                </div>
+<div id="settingsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center no-print p-4">
+    <div class="bg-white p-5 shadow-2xl w-full max-w-md border-t-4 border-blue-600">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] italic underline">Kelola Bengkel & Alamat</h3>
+            <button onclick="closeSettings()" class="text-slate-400 font-bold text-xl">&times;</button>
+        </div>
+        <div class="space-y-3">
+            <input type="text" id="newBengkelName" placeholder="NAMA BENGKEL..." class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] uppercase font-bold">
+            <textarea id="newBengkelAddr" placeholder="ALAMAT LENGKAP..." class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] h-16 italic"></textarea>
+            <button onclick="addNewBengkel()" class="w-full bg-blue-600 text-white py-2 font-bold text-[9px] uppercase">Tambah Bengkel</button>
+            <div class="border-t pt-3">
+                <div id="bengkelListSettings" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="rekapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center no-print p-4">
-        <div class="bg-white p-5 shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto border-t-4 border-slate-900">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] italic underline">Rekap Tagihan Bulanan</h3>
-                <button onclick="closeRekap()" class="text-slate-400 font-bold text-xl">&times;</button>
+<div id="rekapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center no-print p-4">
+    <div class="bg-white p-5 shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto border-t-4 border-slate-900">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] italic underline">Rekap Tagihan Bulanan</h3>
+            <button onclick="closeRekap()" class="text-slate-400 font-bold text-xl">&times;</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div><label class="text-[7px] font-bold text-slate-400 uppercase">Mitra</label><select id="rekapBengkel" class="w-full p-1.5 border border-slate-200 text-[9px] font-bold uppercase"></select></div>
+            <div><label class="text-[7px] font-bold text-slate-400 uppercase">Dari</label><input type="date" id="rekapStart" class="w-full p-1.5 border border-slate-200 text-[9px]"></div>
+            <div><label class="text-[7px] font-bold text-slate-400 uppercase">Sampai</label><input type="date" id="rekapEnd" class="w-full p-1.5 border border-slate-200 text-[9px]"></div>
+            <div class="flex items-end"><button onclick="prosesRekap()" class="w-full bg-blue-600 text-white py-2 text-[9px] font-bold uppercase">Tampilkan</button></div>
+        </div>
+        <div id="hasilRekap" class="hidden">
+            <div class="flex gap-2 mb-3">
+                <button onclick="window.print()" class="flex-1 bg-slate-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest">🖨️ Cetak Rekapan</button>
+                <button onclick="generateKwitansi()" class="flex-1 bg-blue-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">🧾 Kwitansi Total</button>
+                <button onclick="pelunasanMasal()" class="flex-1 bg-emerald-600 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">✔️ Lunaskan Semua</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-                <div><label class="text-[7px] font-bold text-slate-400 uppercase">Mitra</label><select id="rekapBengkel" class="w-full p-1.5 border border-slate-200 text-[9px] font-bold uppercase"></select></div>
-                <div><label class="text-[7px] font-bold text-slate-400 uppercase">Dari</label><input type="date" id="rekapStart" class="w-full p-1.5 border border-slate-200 text-[9px]"></div>
-                <div><label class="text-[7px] font-bold text-slate-400 uppercase">Sampai</label><input type="date" id="rekapEnd" class="w-full p-1.5 border border-slate-200 text-[9px]"></div>
-                <div class="flex items-end"><button onclick="prosesRekap()" class="w-full bg-blue-600 text-white py-2 text-[9px] font-bold uppercase">Tampilkan</button></div>
-            </div>
-            <div id="hasilRekap" class="hidden">
-                <div class="flex gap-2 mb-3">
-                    <button onclick="window.print()" class="flex-1 bg-slate-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest">🖨️ Cetak Rekapan</button>
-                    <button onclick="generateKwitansi()" class="flex-1 bg-blue-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">🧾 Buat Kwitansi Total</button>
-                </div>
-                <div class="border border-slate-200 overflow-hidden mb-2">
-                    <table class="w-full text-[9px] text-left">
-                        <thead class="bg-slate-50 text-slate-400 uppercase text-[7px] font-bold border-b">
-                            <tr><th class="p-2">Tgl</th><th class="p-2">No Polisi</th><th class="p-2">Unit</th><th class="p-2">SA</th> <th class="p-2 text-right">Tagihan</th></tr>
-                        </thead>
-                        <tbody id="rekapTableBody" class="divide-y divide-slate-100 font-bold text-slate-700"></tbody>
-                        <tfoot>
-                            <tr class="bg-slate-900 text-white font-bold"><td colspan="4" class="p-2 text-right uppercase">Total Periode:</td> <td id="totalTagihanRekap" class="p-2 text-right">Rp 0</td></tr>
-                        </tfoot>
-                    </table>
-                </div>
+            <div class="border border-slate-200 overflow-hidden mb-2">
+                <table class="w-full text-[9px] text-left">
+                    <thead class="bg-slate-50 text-slate-400 uppercase text-[7px] font-bold border-b">
+                        <tr><th class="p-2">Tgl</th><th class="p-2">No Polisi</th><th class="p-2">Unit</th><th class="p-2">SA</th><th class="p-2 text-right">Tagihan</th></tr>
+                    </thead>
+                    <tbody id="rekapTableBody" class="divide-y divide-slate-100 font-bold text-slate-700"></tbody>
+                    <tfoot>
+                        <tr class="bg-slate-900 text-white font-bold"><td colspan="4" class="p-2 text-right uppercase">Total Periode:</td> <td id="totalTagihanRekap" class="p-2 text-right">Rp 0</td></tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    <nav class="bg-white border-b border-slate-200 p-2 no-print shadow-sm sticky top-0 z-40">
-        <div class="container mx-auto flex justify-between items-center px-4">
-            <div class="flex items-center gap-3">
-                <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/logo SM.png" class="h-8 grayscale brightness-50">
-                <div class="border-l border-slate-200 pl-3">
-                    <h1 class="text-[11px] font-bold text-slate-900 uppercase italic leading-none">CV. SEDJAHTERA MOTOR</h1>
-                    <p class="text-[7px] text-slate-400 uppercase tracking-[0.2em] mt-0.5 font-bold">Authorized AC Vendor System</p>
-                </div>
+<div id="kwitansiManualModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[80] hidden flex items-center justify-center no-print p-4">
+    <div class="bg-white p-6 shadow-2xl w-full max-w-md border-t-4 border-emerald-600">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[10px] italic underline">Buat Kwitansi Manual</h3>
+            <button onclick="closeKwitansiManual()" class="text-slate-400 font-bold text-2xl">&times;</button>
+        </div>
+        <div class="space-y-4 text-[10px]">
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="font-bold text-slate-400 uppercase text-[8px]">Kota</label><input type="text" id="manKota" value="Bekasi" class="w-full p-2 border border-slate-200 outline-none font-bold text-slate-700"></div>
+                <div><label class="font-bold text-slate-400 uppercase text-[8px]">Tanggal</label><input type="date" id="manTgl" class="w-full p-2 border border-slate-200 outline-none font-bold text-slate-700"></div>
             </div>
-            <div class="flex gap-1">
-                <button onclick="openSettings()" class="border border-slate-200 px-3 py-1.5 text-[8px] font-bold uppercase">⚙️ BENGKEL</button>
-                <button onclick="openRekap()" class="border border-slate-200 px-3 py-1.5 text-[8px] font-bold uppercase">📋 REKAPAN</button>
-                <div class="flex border-l border-slate-200 ml-2 pl-2 gap-1">
-                    <button onclick="exportData()" class="bg-slate-100 px-3 py-1.5 text-[8px] font-bold text-slate-600 hover:bg-slate-200">SAVE</button>
-                    <button onclick="document.getElementById('importFile').click()" class="bg-slate-800 px-3 py-1.5 text-[8px] font-bold text-white hover:bg-black">LOAD</button>
-                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
-                </div>
+            <div><label class="font-bold text-slate-400 uppercase text-[8px]">No. Kwitansi</label><input type="text" id="manNo" placeholder="Contoh: TC/370339" class="w-full p-2 border border-slate-200 outline-none uppercase font-bold text-blue-700"></div>
+            <div><label class="font-bold text-slate-400 uppercase text-[8px]">Telah Terima Dari</label><input type="text" id="manMitra" placeholder="Nama Bengkel / Orang" class="w-full p-2 border border-slate-200 outline-none uppercase font-bold text-slate-900"></div>
+            <div><label class="font-bold text-slate-400 uppercase text-[8px]">Jumlah (RP)</label><input type="number" id="manTotal" placeholder="Masukkan Angka..." oninput="updateTerbilangManual()" class="w-full p-2 border border-slate-200 outline-none font-bold text-emerald-700 text-sm"></div>
+            <div class="p-3 bg-slate-50 border border-slate-100 rounded-sm">
+                <label class="font-bold text-slate-400 uppercase text-[7px] block mb-1">Terbilang:</label>
+                <div id="manTerbilang" class="italic text-slate-600 font-medium capitalize leading-tight"># Nol Rupiah #</div>
+            </div>
+            <div><label class="font-bold text-slate-400 uppercase text-[8px]">Untuk Pembayaran</label><textarea id="manUntuk" placeholder="Contoh: PERBAIKAN AC UNIT..." class="w-full p-2 border border-slate-200 outline-none h-20 uppercase font-medium leading-snug"></textarea></div>
+            <button onclick="cetakKwitansiManual()" class="w-full bg-emerald-600 text-white py-3 font-bold uppercase tracking-widest text-[10px] hover:bg-emerald-700 shadow-lg active:scale-95 transition-all">🖨️ CETAK KWITANSI</button>
+        </div>
+    </div>
+</div>
+
+<nav class="bg-white border-b border-slate-200 p-2 no-print shadow-sm sticky top-0 z-40">
+    <div class="container mx-auto flex justify-between items-center px-4">
+        <div class="flex items-center gap-3">
+            <img src="https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/logo%20SM.png" class="h-8 grayscale brightness-50">
+            <div class="border-l border-slate-200 pl-3">
+                <h1 class="text-[11px] font-bold text-slate-900 uppercase italic leading-none">CV. SEDJAHTERA MOTOR</h1>
+                <p class="text-[7px] text-slate-400 uppercase tracking-[0.2em] mt-0.5 font-bold">Authorized AC Vendor System</p>
             </div>
         </div>
-    </nav>
-
-    <main class="container mx-auto p-4 no-print min-h-screen">
-        <div class="grid grid-cols-2 gap-4 mb-4 text-center">
-            <div class="bg-white p-3 border border-slate-200 border-l-4 border-l-red-500 shadow-sm"><p class="text-[7px] font-bold text-slate-400 uppercase mb-0.5">Piutang</p><h2 id="displayPiutang" class="text-sm font-bold text-red-600">Rp 0</h2></div>
-            <div class="bg-white p-3 border border-slate-200 border-l-4 border-l-emerald-600 shadow-sm"><p class="text-[7px] font-bold text-slate-400 uppercase mb-0.5">Lunas</p><h2 id="displayLunas" class="text-sm font-bold text-emerald-600">Rp 0</h2></div>
+        <div class="flex gap-1">
+            <button onclick="openSettings()" class="border border-slate-200 px-3 py-1.5 text-[8px] font-bold uppercase">⚙️ BENGKEL</button>
+            <button onclick="openRekap()" class="border border-slate-200 px-3 py-1.5 text-[8px] font-bold uppercase">📋 REKAPAN</button>
+            <button onclick="openKwitansiManual()" class="bg-emerald-600 px-3 py-1.5 text-[8px] font-bold text-white uppercase">🧾 MANUAL</button>
+            <div class="flex border-l border-slate-200 ml-2 pl-2 gap-1">
+                <button onclick="exportData()" class="bg-slate-100 px-3 py-1.5 text-[8px] font-bold text-slate-600">SAVE</button>
+                <button onclick="document.getElementById('importFile').click()" class="bg-slate-800 px-3 py-1.5 text-[8px] font-bold text-white">RESTORE</button>
+                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+            </div>
         </div>
+    </div>
+</nav>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            <div class="lg:col-span-3 sticky-panel no-print">
-                <div class="bg-white p-4 border border-slate-200 shadow-sm">
-                    <h2 id="formTitle" class="text-[8px] font-bold text-slate-900 uppercase tracking-widest mb-4 border-b pb-1 italic">Input Pengerjaan</h2>
-                    <input type="hidden" id="editIndex" value="-1">
-                    <div class="space-y-3">
-                        <div><label class="text-[7px] font-bold text-slate-400 uppercase">Bengkel Mitra</label><select id="bengkelMitra" class="w-full p-1.5 border border-slate-200 text-[9px] font-bold text-blue-700 uppercase outline-none"></select></div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div><label class="text-[7px] font-bold text-slate-400 uppercase">No. Polisi</label><input type="text" id="noPol" class="w-full p-1.5 border border-slate-200 uppercase font-bold text-[9px] outline-none"></div>
-                            <div><label class="text-[7px] font-bold text-slate-400 uppercase">Unit Mobil</label><input type="text" id="tipeMobil" class="w-full p-1.5 border border-slate-200 uppercase font-bold text-emerald-700 text-[9px] outline-none"></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div><label class="text-[7px] font-bold text-slate-400 uppercase">SA</label><input type="text" id="sa_name" class="w-full p-1.5 border border-slate-200 uppercase text-[9px] font-medium outline-none"></div>
-                            <div><label class="text-[7px] font-bold text-slate-400 uppercase">Teknisi</label><input type="text" id="teknisi" class="w-full p-1.5 border border-slate-200 uppercase text-[9px] font-medium outline-none"></div>
-                        </div>
-                        <div><label class="text-[7px] font-bold text-slate-400 uppercase">Analisa & Tgl</label><textarea id="keluhan" class="w-full p-1.5 border border-slate-200 text-[9px] h-12 uppercase mb-1 outline-none"></textarea><input type="date" id="tglKerja" class="w-full p-1.5 border border-slate-200 font-bold text-[9px]"></div>
-                        <div class="pt-2 border-t border-slate-50"><div id="partList" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div><button onclick="addPartRow()" class="w-full mt-2 py-1 text-[7px] font-bold text-slate-400 border border-dashed border-slate-200 uppercase hover:bg-slate-50">+ Tambah Item</button></div>
-                        <div class="pt-4 flex gap-1"><button onclick="saveData()" id="btnSave" class="flex-[3] bg-slate-900 text-white py-2 text-[9px] font-bold uppercase tracking-widest hover:bg-black transition">SIMPAN</button><button onclick="resetForm()" class="flex-1 bg-white border border-slate-200 text-slate-400 py-2 text-[9px] uppercase">X</button></div>
+<main class="container mx-auto p-4 no-print min-h-screen">
+    <div class="grid grid-cols-3 gap-2 no-print mb-4">
+        <div class="bg-white p-2 border border-slate-200 shadow-sm text-center">
+            <p class="text-[7px] font-bold text-slate-400 uppercase">Total Unit</p>
+            <h3 id="statTotalUnit" class="text-xs font-bold text-slate-900">0</h3>
+        </div>
+        <div class="bg-white p-2 border border-slate-200 shadow-sm text-center">
+            <p class="text-[7px] font-bold text-slate-400 uppercase">Belum Lunas</p>
+            <h3 id="statBelumLunas" class="text-xs font-bold text-red-500">0</h3>
+        </div>
+        <div class="bg-white p-2 border border-slate-200 shadow-sm text-center">
+            <p class="text-[7px] font-bold text-slate-400 uppercase">Selesai/Lunas</p>
+            <h3 id="statSelesai" class="text-xs font-bold text-emerald-600">0</h3>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-4 text-center">
+        <div class="bg-white p-3 border border-slate-200 border-l-4 border-l-red-500 shadow-sm"><p class="text-[7px] font-bold text-slate-400 uppercase mb-0.5">Piutang</p><h2 id="displayPiutang" class="text-sm font-bold text-red-600">Rp 0</h2></div>
+        <div class="bg-white p-3 border border-slate-200 border-l-4 border-l-emerald-600 shadow-sm"><p class="text-[7px] font-bold text-slate-400 uppercase mb-0.5">Lunas</p><h2 id="displayLunas" class="text-sm font-bold text-emerald-600">Rp 0</h2></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <div class="lg:col-span-3 sticky-panel no-print">
+            <div class="bg-white p-4 border border-slate-200 shadow-sm">
+                <h2 id="formTitle" class="text-[8px] font-bold text-slate-900 uppercase tracking-widest mb-4 border-b pb-1 italic">Input Pengerjaan</h2>
+                <input type="hidden" id="editIndex" value="-1">
+                <div class="space-y-3">
+                    <div><label class="text-[7px] font-bold text-slate-400 uppercase">Bengkel Mitra</label><select id="bengkelMitra" class="w-full p-1.5 border border-slate-200 text-[9px] font-bold text-blue-700 uppercase outline-none"></select></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-[7px] font-bold text-slate-400 uppercase">No. Polisi</label><input type="text" id="noPol" class="w-full p-1.5 border border-slate-200 uppercase font-bold text-[9px] outline-none"></div>
+                        <div><label class="text-[7px] font-bold text-slate-400 uppercase">Unit Mobil</label><input type="text" id="tipeMobil" class="w-full p-1.5 border border-slate-200 uppercase font-bold text-emerald-700 text-[9px] outline-none"></div>
                     </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-9 space-y-3">
-                <div class="bg-white p-2 border border-slate-200 shadow-sm flex gap-2 no-print">
-                    <select id="filterMitraUtama" onchange="renderTable()" class="w-1/3 p-2 bg-slate-100 text-[10px] font-bold uppercase outline-none border border-transparent focus:border-slate-300">
-                        <option value="ALL">-- SEMUA MITRA --</option>
-                    </select>
-                    <input type="text" id="universalSearch" oninput="debounceRender()" placeholder="CARI DATA..." class="w-2/3 p-2 bg-slate-50 text-[10px] uppercase font-medium border border-transparent outline-none focus:border-slate-200">
-                </div>
-                <div class="bg-white border border-slate-200 shadow-sm overflow-x-auto">
-                    <table class="w-full text-left whitespace-nowrap">
-                        <thead class="bg-slate-50 text-slate-400 uppercase text-[7px] font-bold tracking-widest border-b">
-                            <tr>
-                                <th class="col-tgl cursor-pointer hover:text-slate-900" onclick="sortData('tgl')">Tgl <span id="sort-tgl">↓</span></th>
-                                <th class="col-mitra cursor-pointer hover:text-slate-900" onclick="sortData('mitra')">Mitra <span id="sort-mitra"></span></th>
-                                <th class="col-unit cursor-pointer hover:text-slate-900" onclick="sortData('noPol')">Unit / Plat <span id="sort-noPol"></span></th>
-                                <th class="col-sa cursor-pointer hover:text-slate-900" onclick="sortData('sa')">SA <span id="sort-sa"></span></th>
-                                <th class="col-tek cursor-pointer hover:text-slate-900" onclick="sortData('teknisi')">Teknisi <span id="sort-teknisi"></span></th>
-                                <th class="col-tagihan text-right cursor-pointer hover:text-slate-900" onclick="sortData('total')">Tagihan <span id="sort-total"></span></th>
-                                <th class="col-status text-center">Status</th>
-                                <th class="col-aksi text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTable" class="divide-y divide-slate-100 text-[9px] font-bold text-slate-600"></tbody>
-                    </table>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-[7px] font-bold text-slate-400 uppercase">SA</label><input type="text" id="sa_name" class="w-full p-1.5 border border-slate-200 uppercase text-[9px] font-medium outline-none"></div>
+                        <div><label class="text-[7px] font-bold text-slate-400 uppercase">Teknisi</label><input type="text" id="teknisi" class="w-full p-1.5 border border-slate-200 uppercase text-[9px] font-medium outline-none"></div>
+                    </div>
+                    <div><label class="text-[7px] font-bold text-slate-400 uppercase">Analisa & Tgl</label><textarea id="keluhan" class="w-full p-1.5 border border-slate-200 text-[9px] h-12 uppercase mb-1 outline-none"></textarea><input type="date" id="tglKerja" class="w-full p-1.5 border border-slate-200 font-bold text-[9px]"></div>
+                    <div class="pt-2 border-t border-slate-50"><div id="partList" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div><button onclick="addPartRow()" class="w-full mt-2 py-1 text-[7px] font-bold text-slate-400 border border-dashed border-slate-200 uppercase hover:bg-slate-50">+ Tambah Item</button></div>
+                    <div class="pt-4 flex gap-1"><button onclick="saveData()" id="btnSave" class="flex-[3] bg-slate-900 text-white py-2 text-[9px] font-bold uppercase tracking-widest hover:bg-black transition">SIMPAN</button><button onclick="resetForm()" class="flex-1 bg-white border border-slate-200 text-slate-400 py-2 text-[9px] uppercase">X</button></div>
                 </div>
             </div>
         </div>
-    </main>
+
+        <div class="lg:col-span-9 space-y-3">
+            <div class="bg-white p-2 border border-slate-200 shadow-sm flex gap-2 no-print">
+                <select id="filterMitraUtama" onchange="renderTable()" class="w-1/3 p-2 bg-slate-100 text-[10px] font-bold uppercase outline-none border border-transparent focus:border-slate-300">
+                    <option value="ALL">-- SEMUA MITRA --</option>
+                </select>
+                <input type="text" id="universalSearch" oninput="debounceRender()" placeholder="CARI DATA..." class="w-2/3 p-2 bg-slate-50 text-[10px] uppercase font-medium border border-transparent outline-none focus:border-slate-200">
+            </div>
+            <div class="bg-white border border-slate-200 shadow-sm overflow-x-auto">
+                <table class="w-full text-left whitespace-nowrap">
+                    <thead class="bg-slate-50 text-slate-400 uppercase text-[7px] font-bold tracking-widest border-b">
+                        <tr>
+                            <th class="col-tgl cursor-pointer hover:text-slate-900" onclick="sortData('tgl')">Tgl <span id="sort-tgl">↓</span></th>
+                            <th class="col-mitra cursor-pointer hover:text-slate-900" onclick="sortData('mitra')">Mitra <span id="sort-mitra"></span></th>
+                            <th class="col-unit cursor-pointer hover:text-slate-900" onclick="sortData('noPol')">Unit / Plat <span id="sort-noPol"></span></th>
+                            <th class="col-sa cursor-pointer hover:text-slate-900" onclick="sortData('sa')">SA <span id="sort-sa"></span></th>
+                            <th class="col-tek cursor-pointer hover:text-slate-900" onclick="sortData('teknisi')">Teknisi <span id="sort-teknisi"></span></th>
+                            <th class="col-tagihan text-right cursor-pointer hover:text-slate-900" onclick="sortData('total')">Tagihan <span id="sort-total"></span></th>
+                            <th class="col-status text-center">Status</th>
+                            <th class="col-aksi text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable" class="divide-y divide-slate-100 text-[9px] font-bold text-slate-600"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
 
     <script>
+	
+	const URL_LOGO_SM = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/logo%20SM.png";
+const URL_LOGO_DENSO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/denso.png";
+const URL_LOGO_SANDEN = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/sanden.png";
+const URL_LOGO_VALEO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/valeo.png";
+
         // --- DATA BINDING ---
         const DB_NAME = 'sm_pro_billing_db_final_v5_status';
         let db = JSON.parse(localStorage.getItem(DB_NAME)) || [];
@@ -181,63 +228,285 @@
         let currentFilteredData = [];
 
         // --- RENDER FUNCTIONS ---
-        function renderTable() {
-            const table = document.getElementById('historyTable');
-            const filterEl = document.getElementById('filterMitraUtama');
-            const searchEl = document.getElementById('universalSearch');
+function renderTable() {
+    const table = document.getElementById('historyTable');
+    const filterEl = document.getElementById('filterMitraUtama');
+    const searchEl = document.getElementById('universalSearch');
+    
+    if (!table) return;
+
+    const kw = searchEl ? searchEl.value.toUpperCase() : "";
+    const filterMitra = filterEl ? filterEl.value : "ALL";
+    
+    table.innerHTML = "";
+    let piutang = 0; let lunas = 0;
+    let htmlRows = "";
+
+    // Tambahan variabel untuk Monitoring Widget
+    let countBelum = 0;
+    let countLunas = 0;
+
+    const sortedDb = [...db].sort((a, b) => {
+        let valA = a[currentSortCol] || "";
+        let valB = b[currentSortCol] || "";
+        if (typeof valA === 'string') return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        return isAsc ? valA - valB : valB - valA;
+    });
+
+    sortedDb.forEach(data => {
+        const realIdx = db.indexOf(data);
+        const isLunas = data.status === 'LUNAS';
+        const matchMitra = (filterMitra === "ALL" || data.mitra === filterMitra);
+        const matchKW = (data.mitra.includes(kw) || data.noPol.includes(kw) || data.tipe.includes(kw) || (data.sa || "").includes(kw));
+
+        if (matchMitra && matchKW) {
+            // Hitung Nominal
+            if (isLunas) lunas += data.total; else piutang += data.total;
             
-            if (!table) return;
+            // Hitung Jumlah Unit untuk Widget
+            if (isLunas) countLunas++; else countBelum++;
 
-            const kw = searchEl ? searchEl.value.toUpperCase() : "";
-            const filterMitra = filterEl ? filterEl.value : "ALL";
+            const statusClass = isLunas ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100';
             
-            table.innerHTML = "";
-            let piutang = 0; let lunas = 0;
-            let htmlRows = "";
-
-            const sortedDb = [...db].sort((a, b) => {
-                let valA = a[currentSortCol] || "";
-                let valB = b[currentSortCol] || "";
-                if (typeof valA === 'string') return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-                return isAsc ? valA - valB : valB - valA;
-            });
-
-            sortedDb.forEach(data => {
-                const realIdx = db.indexOf(data);
-                const isLunas = data.status === 'LUNAS';
-                const matchMitra = (filterMitra === "ALL" || data.mitra === filterMitra);
-                const matchKW = (data.mitra.includes(kw) || data.noPol.includes(kw) || data.tipe.includes(kw) || (data.sa || "").includes(kw));
-
-                if (matchMitra && matchKW) {
-                    if (isLunas) lunas += data.total; else piutang += data.total;
-                    const statusClass = isLunas ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100';
-                    
-                    htmlRows += `<tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                        <td class="col-tgl opacity-40 font-mono text-[8px]">${data.tgl}</td>
-                        <td class="col-mitra uppercase text-blue-800 font-bold">${data.mitra}</td>
-                        <td class="col-unit">
-                            <div class="text-emerald-700 font-bold leading-none">${data.tipe}</div>
-                            <div class="text-slate-900 font-bold mt-0.5">${data.noPol}</div>
-                        </td>
-                        <td class="col-sa uppercase text-slate-400 text-[8px] font-bold">${data.sa || '-'}</td>
-                        <td class="col-tek uppercase text-slate-400 text-[8px] font-bold">${data.teknisi || '-'}</td>
-                        <td class="col-tagihan text-right font-bold text-slate-900">Rp ${data.total.toLocaleString()}</td>
-                        <td class="col-status text-center"><button onclick="toggleStatus(${realIdx})" class="${statusClass} border px-2 py-0.5 text-[7px] font-bold uppercase">${data.status || 'BELUM'}</button></td>
-                        <td class="col-aksi text-center">
-                            <div class="flex gap-1 justify-center">
-                                <button onclick="editData(${realIdx})" class="text-slate-400 hover:text-blue-600 font-bold text-[8px] border px-1">Edit</button>
-                                <button onclick="openPrintOptions(${realIdx})" class="bg-slate-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase">Invoice</button>
-                                <button onclick="generateKwitansiSatuan(${realIdx})" class="bg-blue-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase shadow-sm">Kwitansi</button>
-                                <button onclick="hapusData(${realIdx})" class="text-slate-300 hover:text-red-500 ml-1 text-base">&times;</button>
-                            </div>
-                        </td>
-                    </tr>`;
-                }
-            });
-            table.innerHTML = htmlRows;
-            document.getElementById('displayPiutang').innerText = `Rp ${piutang.toLocaleString()}`;
-            document.getElementById('displayLunas').innerText = `Rp ${lunas.toLocaleString()}`;
+            htmlRows += `<tr class="hover:bg-slate-50 transition border-b border-slate-50">
+                <td class="col-tgl opacity-40 font-mono text-[8px]">${data.tgl}</td>
+                <td class="col-mitra uppercase text-blue-800 font-bold">${data.mitra}</td>
+                <td class="col-unit">
+                    <div class="text-emerald-700 font-bold leading-none">${data.tipe}</div>
+                    <div class="text-slate-900 font-bold mt-0.5">${data.noPol}</div>
+                </td>
+                <td class="col-sa uppercase text-slate-400 text-[8px] font-bold">${data.sa || '-'}</td>
+                <td class="col-tek uppercase text-slate-400 text-[8px] font-bold">${data.teknisi || '-'}</td>
+                <td class="col-tagihan text-right font-bold text-slate-900">Rp ${data.total.toLocaleString()}</td>
+                <td class="col-status text-center"><button onclick="toggleStatus(${realIdx})" class="${statusClass} border px-2 py-0.5 text-[7px] font-bold uppercase">${data.status || 'BELUM'}</button></td>
+                <td class="col-aksi text-center">
+                    <div class="flex gap-1 justify-center">
+                        <button onclick="editData(${realIdx})" class="text-slate-400 hover:text-blue-600 font-bold text-[8px] border px-1">Edit</button>
+                        <button onclick="openPrintOptions(${realIdx})" class="bg-slate-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase">Invoice</button>
+                        <button onclick="generateKwitansiSatuan(${realIdx})" class="bg-blue-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase shadow-sm">Kwitansi</button>
+                        <button onclick="hapusData(${realIdx})" class="text-slate-300 hover:text-red-500 ml-1 text-base">&times;</button>
+                    </div>
+                </td>
+            </tr>`;
         }
+    });
+
+    table.innerHTML = htmlRows;
+    document.getElementById('displayPiutang').innerText = `Rp ${piutang.toLocaleString()}`;
+    document.getElementById('displayLunas').innerText = `Rp ${lunas.toLocaleString()}`;
+
+    // --- LOGIKA UPDATE WIDGET MONITORING ---
+    if(document.getElementById('statTotalUnit')) {
+        document.getElementById('statTotalUnit').innerText = countLunas + countBelum;
+        document.getElementById('statBelumLunas').innerText = countBelum;
+        document.getElementById('statSelesai').innerText = countLunas;
+    }
+}
+
+
+// --- JAVASCRIPT KWITANSI MANUAL ---
+
+// 1. Fungsi Buka/Tutup Modal
+function openKwitansiManual() {
+    // Tutup semua modal lain biar bersih
+    document.getElementById('rekapModal').classList.add('hidden');
+    document.getElementById('settingsModal').classList.add('hidden');
+    document.getElementById('printOptionsModal').classList.add('hidden');
+    
+    // Buka Kwitansi Manual
+    const modal = document.getElementById('kwitansiManualModal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        document.getElementById('manTgl').value = new Date().toISOString().split('T')[0];
+        document.getElementById('manKota').value = "Bekasi";
+    } else {
+        alert("Wah Boss, ID kwitansiManualModal nggak ketemu di HTML!");
+    }
+}
+
+function closeKwitansiManual() {
+    document.getElementById('kwitansiManualModal').classList.add('hidden');
+}
+
+// 2. Fungsi Otomatis Update Terbilang saat nominal diisi
+function updateTerbilangManual() {
+    const total = parseInt(document.getElementById('manTotal').value) || 0;
+    const teks = "# " + terbilang(total) + " rupiah #";
+    document.getElementById('manTerbilang').innerText = teks;
+}
+
+// 3. Fungsi Utama Cetak (Desain Kwitansi Manual)
+function cetakKwitansiManual() {
+    const kota = document.getElementById('manKota').value;
+    const tglRaw = document.getElementById('manTgl').value;
+    const no = document.getElementById('manNo').value;
+    const mitra = document.getElementById('manMitra').value;
+    const totalRaw = document.getElementById('manTotal').value;
+    const untuk = document.getElementById('manUntuk').value;
+
+    const total = parseInt(totalRaw) || 0;
+    const tglIndo = tglRaw.split('-').reverse().join(' - ');
+    const teksTerbilang = "# " + terbilang(total) + " rupiah #";
+
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <html>
+        <head>
+            <style>
+                @page { size: A5 landscape; margin: 5mm; }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; }
+                .kwitansi-border { 
+                    width: 195mm; 
+                    height: 130mm; 
+                    padding: 8mm; 
+                    border: 1.5px solid #000; 
+                    box-sizing: border-box; 
+                    position: relative; 
+                    margin: 5mm auto; 
+                }
+                
+                .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
+                
+                /* Baris Konten dengan Spasi setelah Titik Dua */
+                .content-row { display: flex; margin-bottom: 10px; font-size: 11px; align-items: flex-start; }
+                .label { width: 140px; font-weight: bold; }
+                .separator { width: 20px; text-align: center; }
+                .value { 
+                    flex: 1; 
+                    border-bottom: 1px dotted #999; 
+                    font-weight: bold; 
+                    text-transform: uppercase; 
+                    padding-left: 8px; /* TAMBAHAN SPASI SETELAH TITIK DUA */
+                    min-height: 15px;
+                }
+                
+                .terbilang-box { background: #f3f4f6; padding: 6px; font-style: italic; border: 1px solid #ccc; text-transform: capitalize; }
+                
+                /* Footer Container - NAIK 2CM */
+                .footer-container { 
+                    position: absolute; 
+                    bottom: 65px; /* NAIK SEKITAR 2CM DARI POSISI SEBELUMNYA */
+                    width: calc(100% - 16mm); 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: flex-end; 
+                }
+                
+                .info-transfer { font-size: 9px; font-style: italic; text-transform: none; line-height: 1.3; }
+                
+                /* Area Tanda Tangan - RENGGANG UNTUK MATERAI */
+                .signature-wrapper { text-align: center; width: 220px; }
+                .city-date { 
+                    font-size: 10px; 
+                    font-weight: bold; 
+                    margin-bottom: 100px; /* DARENGGANGKAN UNTUK TEMPAT MATERAI */
+                    text-transform: none; 
+                }
+                .ttd-nama { 
+                    font-weight: bold; 
+                    border-bottom: 1.5px solid #000; 
+                    display: inline-block; 
+                    padding: 0 25px; 
+                    font-size: 11px; 
+                }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            <div class="kwitansi-border">
+                <div class="header">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="${URL_LOGO_SM}" style="height: 35px;">
+                        <b style="font-family: 'Times New Roman'; font-size: 20px; color: #1e3a8a;">CV. SEDJAHTERA MOTOR</b>
+                    </div>
+                    <div style="font-size: 8px; text-align: center; font-weight: bold;">
+                        CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES<br>
+                        Jl. Cendrawasih Blok F 280, Bekasi Barat Telp. (021) 88874043<br>
+                        Email: sedjahteraac@yahoo.com
+                    </div>
+                    <img src="${URL_LOGO_DENSO}" style="height: 12px;">
+                </div>
+
+                <div style="text-align: center; font-size: 16px; font-weight: 900; text-decoration: underline; margin-bottom: 20px;">KWITANSI</div>
+
+                <div class="content-row">
+                    <div class="label">No</div>
+                    <div class="separator">:</div>
+                    <div class="value">${no}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Telah Terima Dari</div>
+                    <div class="separator">:</div>
+                    <div class="value">${mitra}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Jumlah</div>
+                    <div class="separator">:</div>
+                    <div class="value" style="font-size: 13px;">Rp ${total.toLocaleString()}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Terbilang</div>
+                    <div class="separator">:</div>
+                    <div class="value terbilang-box">${teksTerbilang}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Untuk Pembayaran</div>
+                    <div class="separator">:</div>
+                    <div class="value">${untuk}</div>
+                </div>
+
+                <div class="footer-container">
+                    <div class="info-transfer">
+                        Pembayaran Transfer ke Rekening 701842995<br>
+                        Bank Permata Cabang Harapan Indah<br>
+                        a/n CV. SEDJAHTERA MOTOR
+                    </div>
+                    <div class="signature-wrapper">
+                        <div class="city-date">${kota}, ${tglIndo}</div>
+                        <div class="ttd-nama">Yudiono</div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
+
+
+
+function pelunasanMasal() {
+    // 1. Cek apakah ada data di rekap (menggunakan variabel data yang difilter)
+    // Pastikan variabel currentFilteredData sudah terisi saat prosesRekap()
+    if (!currentFilteredData || currentFilteredData.length === 0) {
+        return alert("Tampilkan data rekap dulu baru bisa dilunasi masal, Bro!");
+    }
+
+    const namaBengkel = document.getElementById('rekapBengkel').value;
+    const jumlahData = currentFilteredData.length;
+
+    // 2. Konfirmasi
+    if (confirm(`Yakin mau melunasi SEMUA tagihan (${jumlahData} unit) untuk ${namaBengkel}?`)) {
+        
+        // 3. Proses ganti status di database utama (db)
+        // Kita looping database utama, jika ID-nya ada di dalam data rekap, ubah jadi LUNAS
+        db.forEach(item => {
+            const ditemukan = currentFilteredData.find(rekap => rekap.id === item.id);
+            if (ditemukan) {
+                item.status = 'LUNAS';
+            }
+        });
+
+        // 4. SIMPAN PERUBAHAN KE LOCALSTORAGE (Ini yang paling penting!)
+        localStorage.setItem(DB_NAME, JSON.stringify(db));
+
+        // 5. UPDATE TAMPILAN
+        renderTable();      // Update tabel di halaman utama
+        prosesRekap();      // Update tabel di dalam modal rekap agar statusnya berubah hijau
+        
+        alert("Mantap Bro! Semua data di rekap ini sudah berhasil di-UPDATE ke LUNAS.");
+    }
+}
+
 
         // --- MITRA MANAGEMENT ---
         function updateMitraSelects() {
@@ -252,15 +521,45 @@
             renderSettingsList();
         }
 
-        function renderSettingsList() {
-            const l = document.getElementById('bengkelListSettings'); if(!l) return;
-            l.innerHTML = "";
-            mitraData.forEach((m, i) => {
-                l.innerHTML += `<div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
-                    <div><span class="text-blue-700 font-bold">${m.nama}</span></div>
-                    <button onclick="removeBengkel(${i})" class="text-red-400 font-bold">×</button></div>`;
-            });
-        }
+function renderSettingsList() {
+    const l = document.getElementById('bengkelListSettings'); 
+    if(!l) return;
+    l.innerHTML = "";
+    
+    // Ambil data mitra terbaru
+    const currentMitra = JSON.parse(localStorage.getItem('mitra_data_db')) || [];
+    
+    currentMitra.forEach((m, i) => { 
+        l.innerHTML += `
+            <div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
+                <div class="flex-1">
+                    <span class="text-blue-700 font-bold text-[9px]">${m.nama}</span>
+                    <p class="text-[7px] text-slate-400 uppercase italic truncate max-w-[200px]">${m.alamat || 'Alamat belum diisi'}</p>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <button onclick="editBengkel(${i})" class="text-blue-500 font-bold text-[10px] hover:underline">EDIT</button>
+                    <button onclick="removeBengkel(${i})" class="text-red-400 font-bold text-lg leading-none">&times;</button>
+                </div>
+            </div>`; 
+    });
+}
+
+function editBengkel(index) {
+    const m = mitraData[index];
+    // Masukkan data ke input atas untuk diedit
+    document.getElementById('newBengkelName').value = m.nama;
+    document.getElementById('newBengkelAddr').value = m.alamat || "";
+    
+    // Hapus data lama dulu agar tidak duplikat saat disimpan nanti
+    mitraData.splice(index, 1);
+    
+    // Beri fokus ke input nama
+    document.getElementById('newBengkelName').focus();
+    
+    // Info ke user
+    console.log("Sedang mengedit bengkel: " + m.nama);
+}
+
 
         function addNewBengkel() {
             const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
@@ -342,7 +641,28 @@
         function closePrintModal() { document.getElementById('printOptionsModal').classList.add('hidden'); }
         function executePrint() { const type = document.querySelector('input[name="printType"]:checked').value; closePrintModal(); generateInvoice(type); }
         
-        function terbilang(n) { const r = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"]; if (n < 12) return r[n]; if (n < 20) return terbilang(n - 10) + " belas"; if (n < 100) return terbilang(Math.floor(n / 10)) + " puluh " + terbilang(n % 10); if (n < 200) return "seratus " + terbilang(n - 100); if (n < 1000) return terbilang(Math.floor(n / 100)) + " ratus " + terbilang(n % 100); if (n < 2000) return "seribu " + terbilang(n - 1000); if (n < 1000000) return terbilang(Math.floor(n / 1000)) + " ribu " + terbilang(n % 1000); return ""; }
+function terbilang(n) {
+    if (n === 0) return "nol";
+    const angka = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+    let hasil = "";
+
+    if (n < 12) hasil = angka[n];
+    else if (n < 20) hasil = terbilang(n - 10) + " belas";
+    else if (n < 100) hasil = terbilang(Math.floor(n / 10)) + " puluh " + (n % 10 !== 0 ? terbilang(n % 10) : "");
+    else if (n < 200) hasil = "seratus " + (n - 100 !== 0 ? terbilang(n - 100) : "");
+    else if (n < 1000) hasil = terbilang(Math.floor(n / 100)) + " ratus " + (n % 100 !== 0 ? terbilang(n % 100) : "");
+    else if (n < 2000) hasil = "seribu " + (n - 1000 !== 0 ? terbilang(n - 1000) : "");
+    else if (n < 1000000) hasil = terbilang(Math.floor(n / 1000)) + " ribu " + (n % 1000 !== 0 ? terbilang(n % 1000) : "");
+    else if (n < 1000000000) hasil = terbilang(Math.floor(n / 1000000)) + " juta " + (n % 1000000 !== 0 ? terbilang(n % 1000000) : "");
+    else if (n < 1000000000000) hasil = terbilang(Math.floor(n / 1000000000)) + " milyar " + (n % 1000000000 !== 0 ? terbilang(n % 1000000000) : "");
+    
+    return hasil.trim().replace(/\s+/g, ' ');
+}
+
+function updateTerbilangManual() {
+    const total = parseInt(document.getElementById('manTotal').value) || 0;
+    document.getElementById('manTerbilang').innerText = "# " + terbilang(total) + " rupiah #";
+}
 
         // --- SISTEM CETAK ---
 function generateInvoice(type) {
@@ -513,47 +833,17 @@ function generateInvoice(type) {
 
 
 
-                    <div class="logo-section">
-
-
-
-                        <div style="display: flex; align-items: center; gap: 8px;">
-
-
-
-                            <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/logo SM.png" style="height: 45px; object-fit: contain;">
-
-
-
-                            <div style="font-family: 'Times New Roman', Times, serif; font-size: 22px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px; text-transform: uppercase;">SEDJAHTERA MOTOR</div>
-
-
-
-                        </div>
-
-
-
-                        <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center; padding-left: 5px;">
-
-
-
-                            <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/denso.png" style="height: 13px;">
-
-
-
-                            <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/sanden.png" style="height: 13px;">
-
-
-
-                            <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/valeo.png" style="height: 13px;">
-
-
-
-                        </div>
-
-
-
-                    </div>
+<div class="logo-section">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="${URL_LOGO_SM}" style="height: 45px; object-fit: contain;">
+        <div style="font-family: 'Times New Roman', Times, serif; font-size: 22px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px; text-transform: uppercase;">SEDJAHTERA MOTOR</div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center; padding-left: 5px;">
+        <img src="${URL_LOGO_DENSO}" style="height: 13px;">
+        <img src="${URL_LOGO_SANDEN}" style="height: 13px;">
+        <img src="${URL_LOGO_VALEO}" style="height: 13px;">
+    </div>
+</div>
 
 
 
@@ -953,425 +1243,86 @@ function generateInvoice(type) {
 
 
 function generateKwitansiSatuan(idx) {
-
-
-
     const data = db[idx];
-
-
-
     const teksTerbilang = "# " + terbilang(data.total) + " rupiah #";
 
-
-
-
-
-
-
     const win = window.open('', '_blank');
-
-
-
     win.document.write(`
-
-
-
         <html>
-
-
-
         <head>
-
-
-
             <title>Kwitansi - ${data.noPol}</title>
-
-
-
             <style>
-
-
-
-                /* Setingan Kertas A5 Landscape */
-
-
-
-                @page { 
-
-
-
-                    size: A5 landscape; 
-
-
-
-                    margin: 5mm; /* Memberikan ruang kosong di pinggir kertas */
-
-
-
-                }
-
-
-
-                body { 
-
-
-
-                    font-family: 'Arial', sans-serif; 
-
-
-
-                    margin: 0; 
-
-
-
-                    padding: 0; 
-
-
-
-                    background: #fff; 
-
-
-
-                    display: flex;
-
-
-
-                    justify-content: center;
-
-
-
-                }
-
-
-
-                .kwitansi-border {
-
-
-
-                    width: 190mm; /* Dipersempit dikit dari 195 ke 190 biar gak mepet kanan */
-
-
-
-                    height: 125mm; /* Dikurangi dikit dari 130 ke 125 biar gak mepet bawah */
-
-
-
-                    margin-top: 5mm; /* Menurunkan kotak agar garis atas tidak kepotong */
-
-
-
-                    padding: 10mm;
-
-
-
-                    border: 1.5px solid #000;
-
-
-
-                    box-sizing: border-box;
-
-
-
-                    position: relative;
-
-
-
-                    background: white;
-
-
-
-                }
-
-
-
+                @page { size: A5 landscape; margin: 5mm; }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background: #fff; display: flex; justify-content: center; }
+                .kwitansi-border { width: 190mm; height: 125mm; margin-top: 5mm; padding: 10mm; border: 1.5px solid #000; box-sizing: border-box; position: relative; background: white; }
                 .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; align-items: center; }
-
-
-
                 .logo-text b { font-family: 'Times New Roman', serif; font-size: 20px; color: #1e3a8a; letter-spacing: 0.5px; }
-
-
-
                 .info-bengkel { font-size: 8px; font-weight: bold; line-height: 1.3; text-align: center; flex: 1; }
-
-
-
                 .content-row { display: flex; margin-bottom: 10px; font-size: 11px; }
-
-
-
                 .label { width: 140px; font-weight: bold; }
-
-
-
                 .separator { width: 20px; }
-
-
-
                 .value { flex: 1; border-bottom: 1px dotted #999; text-transform: uppercase; font-weight: bold; min-height: 15px; }
-
-
-
                 .terbilang-box { background: #f3f4f6; padding: 6px; font-style: italic; border: 1px solid #ccc; text-transform: capitalize; }
-
-
-
                 .footer { position: absolute; bottom: 35px; right: 50px; text-align: center; }
-
-
-
                 .footer-left { position: absolute; bottom: 35px; left: 50px; font-size: 8.5px; font-style: italic; line-height: 1.4; }
-
-
-
                 .ttd-nama { margin-top: 55px; font-weight: bold; border-bottom: 1.5px solid #000; display: inline-block; padding: 0 15px; }
-
-
-
-                
-
-
-
-                @media print { 
-
-
-
-                    body { background: none; }
-
-
-
-                    .kwitansi-border { margin-top: 5mm; } /* Pastikan saat print tetap turun */
-
-
-
-                }
-
-
-
+                @media print { body { background: none; } .kwitansi-border { margin-top: 5mm; } }
             </style>
-
-
-
         </head>
-
-
-
         <body onload="window.print(); window.close();">
-
-
-
             <div class="kwitansi-border">
-
-
-
                 <div class="header">
-
-
-
                     <div style="display: flex; align-items: center; gap: 8px;">
-
-
-
-                        <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/logo SM.png" style="height: 35px;">
-
-
-
+                        <img src="${URL_LOGO_SM}" style="height: 35px;">
                         <div class="logo-text"><b>CV. SEDJAHTERA MOTOR</b></div>
-
-
-
                     </div>
-
-
-
                     <div class="info-bengkel">
-
-
-
                         CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES<br>
-
-
-
                         Jl. Cendrawasih Blok F 280, Bekasi Barat Telp. (021) 88874043 Hp 081310962274<br>
-
-
-
                         Email: sedjahteraac@yahoo.com
-
-
-
                     </div>
-
-
-
-                    <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/denso.png" style="height: 12px;">
-
-
-
+                    <img src="${URL_LOGO_DENSO}" style="height: 12px;">
                 </div>
-
-
-
-
-
-
 
                 <div style="text-align: center; font-size: 16px; font-weight: 900; text-decoration: underline; margin-bottom: 20px; letter-spacing: 2px;">KWITANSI</div>
 
-
-
-
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">No</div><div class="separator">:</div>
-
-
-
                     <div class="value">${data.id.replace('INV-', 'TC/')}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Telah Terima Dari</div><div class="separator">:</div>
-
-
-
                     <div class="value">${data.mitra}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Jumlah</div><div class="separator">:</div>
-
-
-
                     <div class="value" style="font-size: 13px;">Rp ${data.total.toLocaleString()}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Terbilang</div><div class="separator">:</div>
-
-
-
                     <div class="value terbilang-box">${teksTerbilang}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Untuk Pembayaran</div><div class="separator">:</div>
-
-
-
                     <div class="value">Perbaikan AC Unit ${data.tipe} (${data.noPol})</div>
-
-
-
                 </div>
-
-
-
-
-
-
 
                 <div class="footer-left">
-
-
-
                     Pembayaran Transfer ke Rekening 701842995<br>
-
-
-
                     Bank Permata Cabang Harapan Indah<br>
-
-
-
                     a/n CV. SEDJAHTERA MOTOR
-
-
-
                 </div>
-
-
-
-
-
-
 
                 <div class="footer">
-
-
-
                     Bekasi, ${data.tgl.split('-').reverse().join(' - ')}<br><br>
-
-
-
                     <div style="font-size: 9px; font-weight: bold;">CV. SEDJAHTERA MOTOR</div>
-
-
-
                     <div class="ttd-nama">Yudiono</div>
-
-
-
                 </div>
-
-
-
             </div>
-
-
-
         </body>
-
-
-
         </html>
-
-
-
     `);
-
-
-
     win.document.close();
-
-
-
 }
 
 
@@ -1385,434 +1336,94 @@ function generateKwitansiSatuan(idx) {
 
 
 function generateKwitansi() {
-
-
-
     if (currentFilteredData.length === 0) return alert("Tampilkan data rekap dulu, Bro!");
 
-
-
-
-
-
-
     const bengkel = document.getElementById('rekapBengkel').value;
-
-
-
     const tglStart = document.getElementById('rekapStart').value;
-
-
-
     const tglEnd = document.getElementById('rekapEnd').value;
-
-
-
     
-
-
-
-    // Hitung total dari data yang sedang difilter
-
-
-
     const totalNominal = currentFilteredData.reduce((sum, item) => sum + item.total, 0);
-
-
-
     const teksTerbilang = "# " + terbilang(totalNominal) + " rupiah #";
 
-
-
-    
-
-
-
-    // Ambil daftar No Polisi untuk keterangan (opsional)
-
-
-
-    const daftarNopol = [...new Set(currentFilteredData.map(d => d.noPol))].join(", ");
-
-
-
-
-
-
-
     const win = window.open('', '_blank');
-
-
-
     win.document.write(`
-
-
-
         <html>
-
-
-
         <head>
-
-
-
             <title>Kwitansi - ${bengkel}</title>
-
-
-
- <style>
-
-
-
-    @page { 
-
-
-
-        size: A5 landscape; 
-
-
-
-        margin: 5mm; /* Kasih margin kertas agar tidak mepet */
-
-
-
-    }
-
-
-
-    body { 
-
-
-
-        font-family: 'Arial', sans-serif; 
-
-
-
-        margin: 0; 
-
-
-
-        padding: 0; 
-
-
-
-        background: #fff; 
-
-
-
-    }
-
-
-
-    .kwitansi-border {
-
-
-
-        width: 195mm; 
-
-
-
-        height: 130mm;
-
-
-
-        margin: 5mm auto; /* Turunkan posisi kotak dari atas sebesar 5mm */
-
-
-
-        padding: 8mm;
-
-
-
-        border: 1.5px solid #000; /* Tebalkan sedikit garisnya agar jelas */
-
-
-
-        box-sizing: border-box;
-
-
-
-        position: relative;
-
-
-
-    }
-
-
-
+            <style>
+                @page { size: A5 landscape; margin: 5mm; }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background: #fff; }
+                .kwitansi-border { width: 195mm; height: 130mm; margin: 5mm auto; padding: 8mm; border: 1.5px solid #000; box-sizing: border-box; position: relative; }
                 .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-
-
-
                 .logo-text b { font-family: 'Times New Roman', serif; font-size: 22px; color: #1e3a8a; }
-
-
-
                 .info-bengkel { font-size: 8px; font-weight: bold; line-height: 1.2; text-align: center; flex: 1; }
-
-
-
                 .content-row { display: flex; margin-bottom: 12px; font-size: 11px; align-items: flex-start; }
-
-
-
                 .label { width: 130px; font-weight: bold; }
-
-
-
                 .separator { width: 20px; }
-
-
-
                 .value { flex: 1; border-bottom: 1px dotted #ccc; padding-bottom: 2px; text-transform: uppercase; font-weight: bold; }
-
-
-
                 .terbilang-box { background: #eee; padding: 8px; font-style: italic; text-transform: capitalize; border: 1px solid #ddd; }
-
-
-
                 .footer { position: absolute; bottom: 30px; right: 40px; text-align: center; width: 200px; }
-
-
-
                 .footer-left { position: absolute; bottom: 30px; left: 40px; font-size: 9px; font-style: italic; }
-
-
-
                 .ttd-nama { margin-top: 60px; font-weight: bold; border-bottom: 1.5px solid #000; display: inline-block; padding: 0 10px; }
-
-
-
                 @media print { body { background: none; padding: 0; } .kwitansi-border { border: 2px solid #000; } }
-
-
-
             </style>
-
-
-
         </head>
-
-
-
         <body onload="window.print(); window.close();">
-
-
-
             <div class="kwitansi-border">
-
-
-
                 <div class="header">
-
-
-
                     <div style="display: flex; align-items: center; gap: 10px;">
-
-
-
-                        <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/logo SM.png" style="height: 40px;">
-
-
-
+                        <img src="${URL_LOGO_SM}" style="height: 40px;">
                         <div class="logo-text"><b>CV. SEDJAHTERA MOTOR</b></div>
-
-
-
                     </div>
-
-
-
                     <div class="info-bengkel">
-
-
-
                         CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES<br>
-
-
-
                         Jl. Cendrawasih Blok F 280, Bekasi Barat Telp. (021) 88874043 Hp 081310962274<br>
-
-
-
                         Email: sedjahteraac@yahoo.com
-
-
-
                     </div>
-
-
-
-                    <img src="file:///C:/Users/cyber.net/Desktop/projek SBM/denso.png" style="height: 15px;">
-
-
-
+                    <img src="${URL_LOGO_DENSO}" style="height: 15px;">
                 </div>
-
-
-
-
-
-
 
                 <div style="text-align: center; font-size: 16px; font-weight: 900; text-decoration: underline; margin-bottom: 25px; letter-spacing: 3px;">KWITANSI</div>
 
-
-
-
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">No</div><div class="separator">:</div>
-
-
-
                     <div class="value">KW/${Date.now().toString().slice(-6)}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Telah Terima Dari</div><div class="separator">:</div>
-
-
-
                     <div class="value">${bengkel}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Jumlah</div><div class="separator">:</div>
-
-
-
                     <div class="value" style="font-size: 14px;">Rp ${totalNominal.toLocaleString()}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Terbilang</div><div class="separator">:</div>
-
-
-
                     <div class="value terbilang-box">${teksTerbilang}</div>
-
-
-
                 </div>
-
-
-
                 <div class="content-row">
-
-
-
                     <div class="label">Untuk Pembayaran</div><div class="separator">:</div>
-
-
-
                     <div class="value">Tagihan Periode ${tglStart.split('-').reverse().join('/')} s/d ${tglEnd.split('-').reverse().join('/')}</div>
-
-
-
                 </div>
-
-
-
-
-
-
 
                 <div class="footer-left">
-
-
-
                     Pembayaran Transfer ke Rekening 701842995<br>
-
-
-
                     Bank Permata Cabang Harapan Indah<br>
-
-
-
                     a/n CV. SEDJAHTERA MOTOR
-
-
-
                 </div>
-
-
-
-
-
-
 
                 <div class="footer">
-
-
-
                     Bekasi, ${new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}<br><br>
-
-
-
                     <div style="font-size: 9px; font-weight: bold;">CV. SEDJAHTERA MOTOR</div>
-
-
-
                     <div class="ttd-nama">Yudiono</div>
-
-
-
                 </div>
-
-
-
             </div>
-
-
-
         </body>
-
-
-
         </html>
-
-
-
     `);
-
-
-
     win.document.close();
-
-
-
 }
+
 
 
         function prosesRekap() {
