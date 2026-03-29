@@ -24,6 +24,8 @@
         .col-status { width: 80px; }
         .col-aksi { width: 160px; }
     </style>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 </head>
 <body class="bg-[#f1f5f9] text-slate-700">
 
@@ -217,15 +219,45 @@ const URL_LOGO_SANDEN = "https://raw.githubusercontent.com/smartapps-web/sedjaht
 const URL_LOGO_VALEO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/valeo.png";
 
         // --- DATA BINDING ---
-        const DB_NAME = 'sm_pro_billing_db_final_v5_status';
-        let db = JSON.parse(localStorage.getItem(DB_NAME)) || [];
-        let mitraData = JSON.parse(localStorage.getItem('mitra_data_db')) || [];
-        
-        let currentSortCol = 'tgl';
-        let isAsc = false;
-        let activeIndex = null;
-        let timer;
-        let currentFilteredData = [];
+// --- KONFIGURASI FIREBASE SESUAI ALAMAT KAMU ---
+// --- SETINGAN SIMPEL ALA KANGKREDIT ---
+const firebaseConfig = { 
+    databaseURL: "https://bus-managemen-5fca8-default-rtdb.asia-southeast1.firebasedatabase.app/" 
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+const dbSedjahtera = database.ref("sedjahtera");
+
+// --- LOGIKA AGAR DATA DARI CLOUD LANGSUNG TAMPIL DI TABEL ---
+dbSedjahtera.child('pengerjaan').on('value', (snapshot) => {
+    const data = snapshot.val();
+    db = []; // Kosongkan dulu biar nggak dobel
+    if (data) {
+        // Jika data di Firebase bentuknya array, kita ambil
+        db = Array.isArray(data) ? data : Object.values(data);
+    }
+    renderTable(); // Panggil fungsi render biar tabel update otomatis
+});
+
+// --- TARIK DATA MITRA DARI CLOUD ---
+dbSedjahtera.child('mitra').on('value', (snapshot) => {
+    const data = snapshot.val();
+    mitraData = []; // Kosongkan dulu
+    if (data) {
+        // Kita bongkar Object Firebase jadi Array biar bisa dibaca dropdown
+        Object.keys(data).forEach(key => {
+            mitraData.push({ ...data[key], fbKey: key });
+        });
+    }
+    // Langsung update semua pilihan bengkel di aplikasi
+    updateMitraSelects();
+    // Kalau ada list di menu setting, update juga
+    if (typeof renderSettingsList === "function") renderSettingsList();
+});
+
+
 
         // --- RENDER FUNCTIONS ---
 function renderTable() {
@@ -509,17 +541,33 @@ function pelunasanMasal() {
 
 
         // --- MITRA MANAGEMENT ---
-        function updateMitraSelects() {
-            const selects = [document.getElementById('bengkelMitra'), document.getElementById('rekapBengkel'), document.getElementById('filterMitraUtama')];
-            selects.forEach(s => { 
-                if(!s) return; 
-                const cur = s.value;
-                s.innerHTML = (s.id === 'filterMitraUtama') ? '<option value="ALL">-- SEMUA MITRA --</option>' : ""; 
-                mitraData.forEach(m => { const o = document.createElement('option'); o.value = m.nama; o.innerText = m.nama; s.appendChild(o); }); 
-                s.value = cur || (s.id === 'filterMitraUtama' ? 'ALL' : (s.options[0]?.value || ""));
-            });
-            renderSettingsList();
-        }
+function updateMitraSelects() {
+    // Ambil semua dropdown yang butuh daftar bengkel
+    const selects = [
+        document.getElementById('bengkelMitra'), 
+        document.getElementById('rekapBengkel'), 
+        document.getElementById('filterMitraUtama')
+    ];
+
+    selects.forEach(s => { 
+        if(!s) return; 
+        const curValue = s.value; // Simpan pilihan yang sedang dipilih
+        
+        // Kosongkan dan beri pilihan default jika itu filter utama
+        s.innerHTML = (s.id === 'filterMitraUtama') ? '<option value="ALL">-- SEMUA MITRA --</option>' : ""; 
+        
+        // Isi dengan data dari mitraData (Firebase)
+        mitraData.forEach(m => { 
+            const o = document.createElement('option'); 
+            o.value = m.nama; 
+            o.innerText = m.nama; 
+            s.appendChild(o); 
+        }); 
+        
+        // Kembalikan pilihan user tadi jika masih ada
+        s.value = curValue || (s.id === 'filterMitraUtama' ? 'ALL' : (s.options[0]?.value || ""));
+    });
+}
 
 function renderSettingsList() {
     const l = document.getElementById('bengkelListSettings'); 
@@ -592,21 +640,44 @@ function editBengkel(index) {
             document.getElementById('partList').appendChild(div);
         }
 
-        function saveData() {
-            const nopol = document.getElementById('noPol').value;
-            if(!nopol) return alert("No Polisi Wajib!");
-            let items = []; let total = 0;
-            document.querySelectorAll('.part-item-row').forEach(row => {
-                const name = row.querySelector('.p-name').value;
-                const price = parseInt(row.querySelector('.p-price').value) || 0;
-                if(name) { items.push({ name: name.toUpperCase(), price: price }); total += price; }
-            });
-            const editIndex = parseInt(document.getElementById('editIndex').value);
-            const entry = { id: editIndex === -1 ? `INV-${Date.now().toString().slice(-6)}` : db[editIndex].id, tgl: document.getElementById('tglKerja').value, mitra: document.getElementById('bengkelMitra').value, noPol: nopol.toUpperCase(), tipe: document.getElementById('tipeMobil').value.toUpperCase(), keluhan: document.getElementById('keluhan').value.toUpperCase(), sa: document.getElementById('sa_name').value.toUpperCase(), teknisi: document.getElementById('teknisi').value.toUpperCase(), items: items, total: total, status: editIndex === -1 ? 'BELUM' : db[editIndex].status };
-            if(editIndex === -1) db.push(entry); else db[editIndex] = entry;
-            localStorage.setItem(DB_NAME, JSON.stringify(db));
-            resetForm(); renderTable();
-        }
+function saveData() {
+    const nopol = document.getElementById('noPol').value;
+    if(!nopol) return alert("No Polisi Wajib!");
+    
+    let items = []; let total = 0;
+    document.querySelectorAll('.part-item-row').forEach(row => {
+        const name = row.querySelector('.p-name').value;
+        const price = parseInt(row.querySelector('.p-price').value) || 0;
+        if(name) { items.push({ name: name.toUpperCase(), price: price }); total += price; }
+    });
+
+    const editIndex = parseInt(document.getElementById('editIndex').value);
+    const entry = { 
+        id: editIndex === -1 ? `INV-${Date.now().toString().slice(-6)}` : db[editIndex].id, 
+        tgl: document.getElementById('tglKerja').value, 
+        mitra: document.getElementById('bengkelMitra').value, 
+        noPol: nopol.toUpperCase(), 
+        tipe: document.getElementById('tipeMobil').value.toUpperCase(), 
+        keluhan: document.getElementById('keluhan').value.toUpperCase(), 
+        sa: document.getElementById('sa_name').value.toUpperCase(), 
+        teknisi: document.getElementById('teknisi').value.toUpperCase(), 
+        items: items, 
+        total: total, 
+        status: editIndex === -1 ? 'BELUM' : db[editIndex].status 
+    };
+
+    if(editIndex === -1) {
+        // Simpan Data Baru ke Cloud
+        database.ref('sedjahtera/pengerjaan').push(entry);
+    } else {
+        // Update Data di Cloud pakai Key
+        const key = db[editIndex].fbKey;
+        database.ref('sedjahtera/pengerjaan/' + key).update(entry);
+    }
+    
+    resetForm();
+    alert("Data Berhasil Tersimpan di Cloud!");
+}
 
         function resetForm() {
             document.getElementById('editIndex').value = "-1";
@@ -628,8 +699,31 @@ function editBengkel(index) {
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        function toggleStatus(idx) { db[idx].status = db[idx].status === 'LUNAS' ? 'BELUM' : 'LUNAS'; localStorage.setItem(DB_NAME, JSON.stringify(db)); renderTable(); }
-        function hapusData(idx) { if(confirm("Hapus?")) { db.splice(idx, 1); localStorage.setItem(DB_NAME, JSON.stringify(db)); renderTable(); } }
+function toggleStatus(idx) { 
+    const key = db[idx].fbKey;
+    const newStatus = db[idx].status === 'LUNAS' ? 'BELUM' : 'LUNAS';
+    database.ref('sedjahtera/pengerjaan/' + key).update({ status: newStatus });
+}
+
+function hapusData(idx) { 
+    if(confirm("Hapus Data dari Cloud?")) { 
+        const key = db[idx].fbKey;
+        database.ref('sedjahtera/pengerjaan/' + key).remove();
+    } 
+}
+
+// Tambahkan juga untuk tambah bengkel mitra
+function addNewBengkel() {
+    const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
+    const a = document.getElementById('newBengkelAddr').value.trim();
+    if(n) {
+        database.ref('sedjahtera/mitra').push({ nama: n, alamat: a });
+        document.getElementById('newBengkelName').value = "";
+        document.getElementById('newBengkelAddr').value = "";
+    }
+}
+
+
         function exportData() { const dl = document.createElement('a'); dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({db, mitraData})); dl.download = "BACKUP_SM.json"; dl.click(); }
         function importData(e) { const r = new FileReader(); r.onload = function(ex) { const d = JSON.parse(ex.target.result); db = d.db; mitraData = d.mitra; localStorage.setItem(DB_NAME, JSON.stringify(db)); localStorage.setItem('mitra_data_db', JSON.stringify(mitraData)); location.reload(); }; r.readAsText(e.target.files[0]); }
         
