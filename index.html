@@ -244,17 +244,14 @@ dbSedjahtera.child('pengerjaan').on('value', (snapshot) => {
 // --- TARIK DATA MITRA DARI CLOUD ---
 dbSedjahtera.child('mitra').on('value', (snapshot) => {
     const data = snapshot.val();
-    mitraData = []; // Kosongkan dulu
+    mitraData = [];
     if (data) {
-        // Kita bongkar Object Firebase jadi Array biar bisa dibaca dropdown
         Object.keys(data).forEach(key => {
             mitraData.push({ ...data[key], fbKey: key });
         });
     }
-    // Langsung update semua pilihan bengkel di aplikasi
-    updateMitraSelects();
-    // Kalau ada list di menu setting, update juga
-    if (typeof renderSettingsList === "function") renderSettingsList();
+    updateMitraSelects(); // Biar muncul di dropdown input
+    renderSettingsList(); // INI WAJIB ADA BIAR MUNCUL DI MENU KELOLA
 });
 
 
@@ -570,27 +567,41 @@ function updateMitraSelects() {
 }
 
 function renderSettingsList() {
-    const l = document.getElementById('bengkelListSettings'); 
-    if(!l) return;
-    l.innerHTML = "";
+    const listContainer = document.getElementById('bengkelListSettings'); 
+    if(!listContainer) return;
     
-    // Ambil data mitra terbaru
-    const currentMitra = JSON.parse(localStorage.getItem('mitra_data_db')) || [];
+    listContainer.innerHTML = "";
     
-    currentMitra.forEach((m, i) => { 
-        l.innerHTML += `
+    mitraData.forEach((m) => { 
+        listContainer.innerHTML += `
             <div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
                 <div class="flex-1">
                     <span class="text-blue-700 font-bold text-[9px]">${m.nama}</span>
-                    <p class="text-[7px] text-slate-400 uppercase italic truncate max-w-[200px]">${m.alamat || 'Alamat belum diisi'}</p>
+                    <p class="text-[7px] text-slate-400 uppercase italic truncate max-w-[180px]">${m.alamat || 'Alamat belum diisi'}</p>
                 </div>
                 <div class="flex gap-2 items-center">
-                    <button onclick="editBengkel(${i})" class="text-blue-500 font-bold text-[10px] hover:underline">EDIT</button>
-                    <button onclick="removeBengkel(${i})" class="text-red-400 font-bold text-lg leading-none">&times;</button>
+                    <button onclick="editBengkelCloud('${m.fbKey}', '${m.nama}', '${m.alamat || ''}')" class="text-blue-500 font-bold text-[9px] hover:underline">EDIT</button>
+                    <button onclick="hapusBengkelCloud('${m.fbKey}')" class="text-red-400 font-bold text-lg leading-none hover:text-red-600">&times;</button>
                 </div>
             </div>`; 
     });
 }
+
+
+function hapusMitraCloud(key) {
+    if (confirm("Hapus bengkel ini dari Cloud?")) {
+        // Hapus langsung ke folder mitra berdasarkan key uniknya
+        database.ref('sedjahtera/mitra/' + key).remove()
+            .then(() => {
+                alert("Bengkel berhasil dihapus!");
+            })
+            .catch((error) => {
+                alert("Gagal hapus: " + error.message);
+            });
+    }
+}
+
+
 
 function editBengkel(index) {
     const m = mitraData[index];
@@ -609,17 +620,31 @@ function editBengkel(index) {
 }
 
 
-        function addNewBengkel() {
-            const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
-            const a = document.getElementById('newBengkelAddr').value.trim();
-            if(n && !mitraData.some(m => m.nama === n)) {
-                mitraData.push({ nama: n, alamat: a });
-                localStorage.setItem('mitra_data_db', JSON.stringify(mitraData));
-                updateMitraSelects();
-                document.getElementById('newBengkelName').value = "";
-                document.getElementById('newBengkelAddr').value = "";
-            } else { alert("Nama bengkel kosong atau sudah ada!"); }
-        }
+function addNewBengkel() {
+    const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
+    const a = document.getElementById('newBengkelAddr').value.trim();
+    
+    if(n) {
+        // Langsung simpan ke folder mitra di Firebase
+        database.ref('sedjahtera/mitra').push({
+            nama: n,
+            alamat: a
+        }).then(() => {
+            // Kosongkan input setelah berhasil
+            document.getElementById('newBengkelName').value = "";
+            document.getElementById('newBengkelAddr').value = "";
+            alert("Bengkel Berhasil Ditambahkan ke Cloud!");
+        });
+    } else {
+        alert("Nama bengkel tidak boleh kosong, Bro!");
+    }
+}
+
+function hapusBengkelCloud(key) {
+    if(confirm("Hapus bengkel ini dari data Cloud?")) {
+        database.ref('sedjahtera/mitra/' + key).remove();
+    }
+}
 
         function removeBengkel(i) { if(confirm("Hapus?")) { mitraData.splice(i, 1); localStorage.setItem('mitra_data_db', JSON.stringify(mitraData)); updateMitraSelects(); } }
 
