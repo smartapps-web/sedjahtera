@@ -29,6 +29,29 @@
 </head>
 <body class="bg-[#f1f5f9] text-slate-700">
 
+<div id="loginPage" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4">
+    <div class="bg-white p-8 shadow-2xl w-full max-w-sm border-t-8 border-blue-600">
+        <div class="text-center mb-6">
+            <img src="https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/logo%20SM.png" class="h-12 mx-auto mb-2 grayscale">
+            <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-slate-800">Security Access</h2>
+            <p class="text-[8px] text-slate-400 italic">CV. SEDJAHTERA MOTOR - BILLING SYSTEM</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase block mb-1">Username</label>
+                <input type="text" id="userLogin" class="w-full p-3 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] uppercase focus:border-blue-500">
+            </div>
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase block mb-1">Password</label>
+                <input type="password" id="passLogin" class="w-full p-3 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] focus:border-blue-500">
+            </div>
+            <button onclick="cekLogin()" class="w-full bg-blue-600 text-white py-3 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg active:scale-95">MASUK SISTEM</button>
+        </div>
+        <p id="loginError" class="text-center text-red-500 text-[8px] mt-4 font-bold hidden uppercase italic">! Username atau Password Salah !</p>
+    </div>
+</div>
+
+
 <div id="printOptionsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center no-print p-4">
     <div class="bg-white p-5 shadow-2xl w-full max-w-xs border-t-4 border-slate-900">
         <h3 class="font-bold text-slate-900 uppercase tracking-widest text-[9px] mb-3 border-b pb-2 italic">Opsi Cetak Invoice</h3>
@@ -134,6 +157,7 @@
             <div class="flex border-l border-slate-200 ml-2 pl-2 gap-1">
                 <button onclick="exportData()" class="bg-slate-100 px-3 py-1.5 text-[8px] font-bold text-slate-600">SAVE</button>
                 <button onclick="document.getElementById('importFile').click()" class="bg-slate-800 px-3 py-1.5 text-[8px] font-bold text-white">RESTORE</button>
+				<button onclick="logoutSistem()" class="bg-red-500 px-3 py-1.5 text-[8px] font-bold text-white uppercase ml-1">OUT</button>
                 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
             </div>
         </div>
@@ -176,7 +200,7 @@
                         <div><label class="text-[7px] font-bold text-slate-400 uppercase">SA</label><input type="text" id="sa_name" class="w-full p-1.5 border border-slate-200 uppercase text-[9px] font-medium outline-none"></div>
                         <div><label class="text-[7px] font-bold text-slate-400 uppercase">Teknisi</label><input type="text" id="teknisi" class="w-full p-1.5 border border-slate-200 uppercase text-[9px] font-medium outline-none"></div>
                     </div>
-                    <div><label class="text-[7px] font-bold text-slate-400 uppercase">Analisa & Tgl</label><textarea id="keluhan" class="w-full p-1.5 border border-slate-200 text-[9px] h-12 uppercase mb-1 outline-none"></textarea><input type="date" id="tglKerja" class="w-full p-1.5 border border-slate-200 font-bold text-[9px]"></div>
+                    <div><label class="text-[7px] font-bold text-slate-400 uppercase">Analisa & Tindakan</label><textarea id="keluhan" class="w-full p-1.5 border border-slate-200 text-[9px] h-12 uppercase mb-1 outline-none"></textarea><input type="date" id="tglKerja" class="w-full p-1.5 border border-slate-200 font-bold text-[9px]"></div>
                     <div class="pt-2 border-t border-slate-50"><div id="partList" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div><button onclick="addPartRow()" class="w-full mt-2 py-1 text-[7px] font-bold text-slate-400 border border-dashed border-slate-200 uppercase hover:bg-slate-50">+ Tambah Item</button></div>
                     <div class="pt-4 flex gap-1"><button onclick="saveData()" id="btnSave" class="flex-[3] bg-slate-900 text-white py-2 text-[9px] font-bold uppercase tracking-widest hover:bg-black transition">SIMPAN</button><button onclick="resetForm()" class="flex-1 bg-white border border-slate-200 text-slate-400 py-2 text-[9px] uppercase">X</button></div>
                 </div>
@@ -212,6 +236,44 @@
 </main>
 
 <script>
+
+// --- SISTEM KEAMANAN LOGIN ---
+
+// 1. Cek status login saat aplikasi dibuka
+window.addEventListener('load', () => {
+    const status = sessionStorage.getItem('isLoggedIn');
+    if(status === 'true') {
+        document.getElementById('loginPage').classList.add('hidden');
+    }
+});
+
+// 2. Fungsi Validasi Login
+function cekLogin() {
+    const user = document.getElementById('userLogin').value.trim().toUpperCase();
+    const pass = document.getElementById('passLogin').value;
+    const errorMsg = document.getElementById('loginError');
+
+    // LOGIKA DUA AKUN: ADMIN atau YUDIONO
+    if ((user === "ARIF" && pass === "SM123") || (user === "YUDIONO" && pass === "SM123")) {
+        sessionStorage.setItem('isLoggedIn', 'true'); 
+        document.getElementById('loginPage').classList.add('hidden');
+        alert("Akses Diterima! Selamat Bekerja, Pak " + user);
+    } else {
+        errorMsg.classList.remove('hidden');
+        document.getElementById('userLogin').value = "";
+        document.getElementById('passLogin').value = "";
+    }
+}
+
+// 3. Tambahkan fitur Logout (Opsional)
+function logoutSistem() {
+    if(confirm("Yakin mau keluar dari sistem?")) {
+        sessionStorage.removeItem('isLoggedIn');
+        location.reload();
+    }
+}
+
+
     const URL_LOGO_SM = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/logo%20SM.png";
     const URL_LOGO_DENSO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/denso.png";
     const URL_LOGO_SANDEN = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/sanden.png";
