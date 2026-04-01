@@ -75,7 +75,7 @@
         </div>
         <div id="hasilRekap" class="hidden">
             <div class="flex gap-2 mb-3">
-                <button onclick="window.print()" class="flex-1 bg-slate-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest">🖨️ Cetak Rekapan</button>
+                <button onclick="printRekap()" class="flex-1 bg-slate-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest">🖨️ Cetak Rekapan</button>
                 <button onclick="generateKwitansi()" class="flex-1 bg-blue-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">🧾 Kwitansi Total</button>
                 <button onclick="pelunasanMasal()" class="flex-1 bg-emerald-600 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">✔️ Lunaskan Semua</button>
             </div>
@@ -211,131 +211,292 @@
     </div>
 </main>
 
-    <script>
-	
-	const URL_LOGO_SM = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/logo%20SM.png";
-const URL_LOGO_DENSO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/denso.png";
-const URL_LOGO_SANDEN = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/sanden.png";
-const URL_LOGO_VALEO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/valeo.png";
+<script>
+    const URL_LOGO_SM = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/logo%20SM.png";
+    const URL_LOGO_DENSO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/denso.png";
+    const URL_LOGO_SANDEN = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/sanden.png";
+    const URL_LOGO_VALEO = "https://raw.githubusercontent.com/smartapps-web/sedjahtera/main/valeo.png";
 
-        // --- DATA BINDING ---
-// --- KONFIGURASI FIREBASE SESUAI ALAMAT KAMU ---
-// --- SETINGAN SIMPEL ALA KANGKREDIT ---
-const firebaseConfig = { 
-    databaseURL: "https://bus-managemen-5fca8-default-rtdb.asia-southeast1.firebasedatabase.app/" 
-};
+    // 1. CONFIG FIREBASE (Sesuai Alamat Kamu)
+    const firebaseConfig = { databaseURL: "https://bus-managemen-5fca8-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const dbSedjahtera = database.ref("sedjahtera");
 
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    // 2. VARIABEL DATA
+    let db = [];
+    let mitraData = [];
+    let editMitraKey = null; 
+    let activeIndex = null;
+    let currentSortCol = 'tgl';
+    let isAsc = false;
+    let timer;
+    let currentFilteredData = [];
+    const DB_NAME = 'sm_pro_billing_db_final_v5_status';
 
-const database = firebase.database();
-const dbSedjahtera = database.ref("sedjahtera");
-
-// --- LOGIKA AGAR DATA DARI CLOUD LANGSUNG TAMPIL DI TABEL ---
-dbSedjahtera.child('pengerjaan').on('value', (snapshot) => {
-    const data = snapshot.val();
-    db = []; // Kosongkan dulu biar nggak dobel
-    if (data) {
-        // Jika data di Firebase bentuknya array, kita ambil
-        db = Array.isArray(data) ? data : Object.values(data);
-    }
-    renderTable(); // Panggil fungsi render biar tabel update otomatis
-});
-
-// --- TARIK DATA MITRA DARI CLOUD ---
-dbSedjahtera.child('mitra').on('value', (snapshot) => {
-    const data = snapshot.val();
-    mitraData = [];
-    if (data) {
-        Object.keys(data).forEach(key => {
-            mitraData.push({ ...data[key], fbKey: key });
-        });
-    }
-    updateMitraSelects(); // Biar muncul di dropdown input
-    renderSettingsList(); // INI WAJIB ADA BIAR MUNCUL DI MENU KELOLA
-});
-
-
-
-        // --- RENDER FUNCTIONS ---
-function renderTable() {
-    const table = document.getElementById('historyTable');
-    const filterEl = document.getElementById('filterMitraUtama');
-    const searchEl = document.getElementById('universalSearch');
-    
-    if (!table) return;
-
-    const kw = searchEl ? searchEl.value.toUpperCase() : "";
-    const filterMitra = filterEl ? filterEl.value : "ALL";
-    
-    table.innerHTML = "";
-    let piutang = 0; let lunas = 0;
-    let htmlRows = "";
-
-    // Tambahan variabel untuk Monitoring Widget
-    let countBelum = 0;
-    let countLunas = 0;
-
-    const sortedDb = [...db].sort((a, b) => {
-        let valA = a[currentSortCol] || "";
-        let valB = b[currentSortCol] || "";
-        if (typeof valA === 'string') return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        return isAsc ? valA - valB : valB - valA;
-    });
-
-    sortedDb.forEach(data => {
-        const realIdx = db.indexOf(data);
-        const isLunas = data.status === 'LUNAS';
-        const matchMitra = (filterMitra === "ALL" || data.mitra === filterMitra);
-        const matchKW = (data.mitra.includes(kw) || data.noPol.includes(kw) || data.tipe.includes(kw) || (data.sa || "").includes(kw));
-
-        if (matchMitra && matchKW) {
-            // Hitung Nominal
-            if (isLunas) lunas += data.total; else piutang += data.total;
-            
-            // Hitung Jumlah Unit untuk Widget
-            if (isLunas) countLunas++; else countBelum++;
-
-            const statusClass = isLunas ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100';
-            
-            htmlRows += `<tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                <td class="col-tgl opacity-40 font-mono text-[8px]">${data.tgl}</td>
-                <td class="col-mitra uppercase text-blue-800 font-bold">${data.mitra}</td>
-                <td class="col-unit">
-                    <div class="text-emerald-700 font-bold leading-none">${data.tipe}</div>
-                    <div class="text-slate-900 font-bold mt-0.5">${data.noPol}</div>
-                </td>
-                <td class="col-sa uppercase text-slate-400 text-[8px] font-bold">${data.sa || '-'}</td>
-                <td class="col-tek uppercase text-slate-400 text-[8px] font-bold">${data.teknisi || '-'}</td>
-                <td class="col-tagihan text-right font-bold text-slate-900">Rp ${data.total.toLocaleString()}</td>
-                <td class="col-status text-center"><button onclick="toggleStatus(${realIdx})" class="${statusClass} border px-2 py-0.5 text-[7px] font-bold uppercase">${data.status || 'BELUM'}</button></td>
-                <td class="col-aksi text-center">
-                    <div class="flex gap-1 justify-center">
-                        <button onclick="editData(${realIdx})" class="text-slate-400 hover:text-blue-600 font-bold text-[8px] border px-1">Edit</button>
-                        <button onclick="openPrintOptions(${realIdx})" class="bg-slate-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase">Invoice</button>
-                        <button onclick="generateKwitansiSatuan(${realIdx})" class="bg-blue-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase shadow-sm">Kwitansi</button>
-                        <button onclick="hapusData(${realIdx})" class="text-slate-300 hover:text-red-500 ml-1 text-base">&times;</button>
-                    </div>
-                </td>
-            </tr>`;
+    // 3. PENARIK DATA CLOUD (REALTIME)
+    dbSedjahtera.child('pengerjaan').on('value', (snapshot) => {
+        const data = snapshot.val();
+        db = []; 
+        if (data) {
+            Object.keys(data).forEach(key => {
+                db.push({ ...data[key], fbKey: key });
+            });
         }
+        renderTable(); 
     });
 
-    table.innerHTML = htmlRows;
-    document.getElementById('displayPiutang').innerText = `Rp ${piutang.toLocaleString()}`;
-    document.getElementById('displayLunas').innerText = `Rp ${lunas.toLocaleString()}`;
+    dbSedjahtera.child('mitra').on('value', (snapshot) => {
+        const data = snapshot.val();
+        mitraData = [];
+        if (data) {
+            Object.keys(data).forEach(key => {
+                mitraData.push({ ...data[key], fbKey: key });
+            });
+        }
+        updateMitraSelects(); 
+        renderSettingsList(); 
+    });
 
-    // --- LOGIKA UPDATE WIDGET MONITORING ---
-    if(document.getElementById('statTotalUnit')) {
+
+function exportData() {
+    // 1. Siapkan data yang mau di-backup
+    const backup = {
+        db: db,
+        mitra: mitraData,
+        backup_date: new Date().toISOString(),
+        app_name: "SEDJAHTERA_MOTOR_PRO"
+    };
+
+    // 2. Ubah data jadi teks JSON
+    const dataStr = JSON.stringify(backup, null, 2);
+    
+    // 3. Buat file bayangan (Blob)
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    // 4. Buat tombol klik otomatis
+    const dl = document.createElement('a');
+    const fileName = `BACKUP_SM_CLOUD_${new Date().toISOString().slice(0,10)}.json`;
+    
+    dl.href = url;
+    dl.download = fileName;
+    
+    // 5. Eksekusi download tanpa pop-up (langsung ke folder download)
+    document.body.appendChild(dl);
+    dl.click();
+    
+    // 6. Bersihkan memori
+    document.body.removeChild(dl);
+    URL.revokeObjectURL(url);
+
+    console.log("Backup otomatis berhasil disimpan ke folder Download!");
+}
+
+
+function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const r = new FileReader();
+    r.onload = function(ex) {
+        try {
+            const d = JSON.parse(ex.target.result);
+            if (confirm("PERHATIAN: Data di Cloud akan diganti dengan data dari file ini. Lanjutkan?")) {
+                
+                // 1. Restore Data Pengerjaan ke Cloud
+                if (d.db) {
+                    database.ref('sedjahtera/pengerjaan').set(d.db);
+                }
+
+                // 2. Restore Data Mitra ke Cloud
+                if (d.mitra) {
+                    database.ref('sedjahtera/mitra').set(d.mitra);
+                }
+
+                alert("Mantap Bro! Data berhasil di-RESTORE ke Cloud Firebase.");
+                location.reload(); // Refresh biar data baru ketarik semua
+            }
+        } catch (err) {
+            alert("File JSON nggak valid, Bro!");
+        }
+    };
+    r.readAsText(file);
+}
+
+
+
+    // 4. FUNGSI RENDER TABEL UTAMA (PERBAIKAN VITAL)
+    function renderTable() {
+        const table = document.getElementById('historyTable');
+        if (!table) return;
+
+        const kw = document.getElementById('universalSearch').value.toUpperCase();
+        const filterMitra = document.getElementById('filterMitraUtama').value;
+        
+        table.innerHTML = "";
+        let piutang = 0; let lunas = 0;
+        let countBelum = 0; let countLunas = 0;
+
+        const sortedDb = [...db].sort((a, b) => {
+            let valA = a[currentSortCol] || "";
+            let valB = b[currentSortCol] || "";
+            if (typeof valA === 'string') return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            return isAsc ? valA - valB : valB - valA;
+        });
+
+        sortedDb.forEach(data => {
+            const isLunas = data.status === 'LUNAS';
+            const matchMitra = (filterMitra === "ALL" || data.mitra === filterMitra);
+            const matchKW = (data.mitra.includes(kw) || data.noPol.includes(kw) || data.tipe.includes(kw));
+
+            if (matchMitra && matchKW) {
+                if (isLunas) { lunas += data.total; countLunas++; } 
+                else { piutang += data.total; countBelum++; }
+
+                const realIdx = db.findIndex(item => item.fbKey === data.fbKey);
+                const statusClass = isLunas ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100';
+                
+                table.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-50">
+                        <td class="col-tgl opacity-40 font-mono text-[8px]">${data.tgl}</td>
+                        <td class="col-mitra uppercase text-blue-800 font-bold">${data.mitra}</td>
+                        <td class="col-unit">
+                            <div class="text-emerald-700 font-bold leading-none">${data.tipe}</div>
+                            <div class="text-slate-900 font-bold mt-0.5">${data.noPol}</div>
+                        </td>
+                        <td class="col-sa uppercase text-slate-400 text-[8px] font-bold">${data.sa || '-'}</td>
+                        <td class="col-tek uppercase text-slate-400 text-[8px] font-bold">${data.teknisi || '-'}</td>
+                        <td class="col-tagihan text-right font-bold text-slate-900">Rp ${data.total.toLocaleString()}</td>
+                        <td class="col-status text-center"><button onclick="toggleStatus(${realIdx})" class="${statusClass} border px-2 py-0.5 text-[7px] font-bold uppercase">${data.status || 'BELUM'}</button></td>
+                        <td class="col-aksi text-center">
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="editData(${realIdx})" class="text-slate-400 hover:text-blue-600 font-bold text-[8px] border px-1">Edit</button>
+                                <button onclick="openPrintOptions(${realIdx})" class="bg-slate-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase">Invoice</button>
+								<button onclick="generateKwitansiSatuan(${realIdx})" class="bg-blue-800 text-white px-2 py-0.5 text-[7px] font-bold uppercase shadow-sm">Kwitansi</button>
+                                <button onclick="hapusData(${realIdx})" class="text-slate-300 hover:text-red-500 ml-1 text-base">&times;</button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }
+        });
+
+        document.getElementById('displayPiutang').innerText = `Rp ${piutang.toLocaleString()}`;
+        document.getElementById('displayLunas').innerText = `Rp ${lunas.toLocaleString()}`;
         document.getElementById('statTotalUnit').innerText = countLunas + countBelum;
         document.getElementById('statBelumLunas').innerText = countBelum;
         document.getElementById('statSelesai').innerText = countLunas;
     }
-}
+
+    // 5. FUNGSI SAVE & UPDATE (PENGERJAAN)
+    function saveData() {
+        const nopol = document.getElementById('noPol').value;
+        if(!nopol) return alert("No Polisi Wajib!");
+        
+        let items = []; let total = 0;
+        document.querySelectorAll('.part-item-row').forEach(row => {
+            const name = row.querySelector('.p-name').value;
+            const price = parseInt(row.querySelector('.p-price').value) || 0;
+            if(name) { items.push({ name: name.toUpperCase(), price: price }); total += price; }
+        });
+
+        const eIdx = parseInt(document.getElementById('editIndex').value);
+        const entry = { 
+            id: eIdx === -1 ? `INV-${Date.now().toString().slice(-6)}` : db[eIdx].id, 
+            tgl: document.getElementById('tglKerja').value, 
+            mitra: document.getElementById('bengkelMitra').value, 
+            noPol: nopol.toUpperCase(), 
+            tipe: document.getElementById('tipeMobil').value.toUpperCase(), 
+            keluhan: document.getElementById('keluhan').value.toUpperCase(), 
+            sa: document.getElementById('sa_name').value.toUpperCase(), 
+            teknisi: document.getElementById('teknisi').value.toUpperCase(), 
+            items: items, total: total, 
+            status: eIdx === -1 ? 'BELUM' : db[eIdx].status 
+        };
+
+        if(eIdx === -1) {
+            dbSedjahtera.child('pengerjaan').push(entry);
+        } else {
+            dbSedjahtera.child('pengerjaan/' + db[eIdx].fbKey).update(entry);
+        }
+        resetForm();
+        alert("Data Berhasil Sinkron Cloud!");
+    }
+
+    // 6. FUNGSI REKAPAN (FIXED)
+    function prosesRekap() {
+        const b = document.getElementById('rekapBengkel').value;
+        const s = document.getElementById('rekapStart').value;
+        const e = document.getElementById('rekapEnd').value;
+        if(!s || !e) return alert("Pilih tanggal!");
+        
+        currentFilteredData = db.filter(d => d.mitra === b && d.tgl >= s && d.tgl <= e);
+        const tbody = document.getElementById('rekapTableBody'); 
+        tbody.innerHTML = ""; 
+        let t = 0;
+        
+        currentFilteredData.forEach(d => { 
+            t += d.total; 
+            tbody.innerHTML += `<tr><td class="p-2">${d.tgl}</td><td class="p-2">${d.noPol}</td><td class="p-2">${d.tipe}</td><td class="p-2">${d.sa || '-'}</td><td class="p-2 text-right">Rp ${d.total.toLocaleString()}</td></tr>`; 
+        });
+        
+        document.getElementById('totalTagihanRekap').innerText = `Rp ${t.toLocaleString()}`;
+        document.getElementById('hasilRekap').classList.remove('hidden');
+    }
+
+    // 7. FUNGSI KELOLA BENGKEL (FIXED)
+    function addNewBengkel() {
+        const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
+        const a = document.getElementById('newBengkelAddr').value.trim();
+        if(!n) return alert("Nama bengkel wajib!");
+
+        if(editMitraKey) {
+            dbSedjahtera.child('mitra/' + editMitraKey).update({ nama: n, alamat: a }).then(() => { resetFormBengkel(); });
+        } else {
+            dbSedjahtera.child('mitra').push({ nama: n, alamat: a }).then(() => { resetFormBengkel(); });
+        }
+    }
+
+    function renderSettingsList() {
+        const list = document.getElementById('bengkelListSettings'); 
+        if(!list) return;
+        list.innerHTML = "";
+        mitraData.forEach((m) => { 
+            list.innerHTML += `
+                <div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
+                    <div class="flex-1">
+                        <span class="text-blue-700 font-bold text-[9px]">${m.nama}</span>
+                        <p class="text-[7px] text-slate-400 italic truncate max-w-[180px]">${m.alamat || '-'}</p>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <button onclick="editBengkelCloud('${m.fbKey}', '${m.nama}', '${m.alamat || ''}')" class="text-blue-500 font-bold text-[9px]">EDIT</button>
+                        <button onclick="hapusBengkelCloud('${m.fbKey}')" class="text-red-400 text-lg">&times;</button>
+                    </div>
+                </div>`; 
+        });
+    }
+
+    // UTILS LAINNYA
+    function toggleStatus(idx) { dbSedjahtera.child('pengerjaan/' + db[idx].fbKey).update({ status: db[idx].status === 'LUNAS' ? 'BELUM' : 'LUNAS' }); }
+    function hapusData(idx) { if(confirm("Hapus?")) dbSedjahtera.child('pengerjaan/' + db[idx].fbKey).remove(); }
+    function hapusBengkelCloud(key) { if(confirm("Hapus Bengkel?")) dbSedjahtera.child('mitra/' + key).remove(); }
+    function editBengkelCloud(key, n, a) { editMitraKey = key; document.getElementById('newBengkelName').value = n; document.getElementById('newBengkelAddr').value = a; document.querySelector("button[onclick='addNewBengkel()']").innerText = "UPDATE BENGKEL"; }
+    function resetFormBengkel() { editMitraKey = null; document.getElementById('newBengkelName').value = ""; document.getElementById('newBengkelAddr').value = ""; document.querySelector("button[onclick='addNewBengkel()']").innerText = "Tambah Bengkel"; }
+    function resetForm() { document.getElementById('editIndex').value = "-1"; document.getElementById('noPol').value = ""; document.getElementById('tipeMobil').value = ""; document.getElementById('keluhan').value = ""; document.getElementById('partList').innerHTML = ""; addPartRow(); document.getElementById('tglKerja').value = new Date().toISOString().split('T')[0]; document.getElementById('formTitle').innerText = "Input Pengerjaan"; }
+    function editData(idx) { const d = db[idx]; document.getElementById('editIndex').value = idx; document.getElementById('bengkelMitra').value = d.mitra; document.getElementById('noPol').value = d.noPol; document.getElementById('tipeMobil').value = d.tipe; document.getElementById('sa_name').value = d.sa || ""; document.getElementById('teknisi').value = d.teknisi || ""; document.getElementById('tglKerja').value = d.tgl; document.getElementById('keluhan').value = d.keluhan; document.getElementById('partList').innerHTML = ""; d.items.forEach(it => addPartRow(it.name, it.price)); document.getElementById('formTitle').innerText = "Edit Data " + d.id; window.scrollTo({top: 0, behavior: 'smooth'}); }
+    function addPartRow(n = '', p = '') { const div = document.createElement('div'); div.className = "flex gap-1 items-center part-item-row"; div.innerHTML = `<input type="text" placeholder="Item" value="${n}" class="p-name w-2/3 p-1.5 border border-slate-200 uppercase text-[9px] outline-none"><input type="number" placeholder="Rp" value="${p}" class="p-price w-1/3 p-1.5 border border-slate-200 font-bold text-blue-800 text-[9px] outline-none"><button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-red-500 text-base">&times;</button>`; document.getElementById('partList').appendChild(div); }
+    function updateMitraSelects() { const selects = [document.getElementById('bengkelMitra'), document.getElementById('rekapBengkel'), document.getElementById('filterMitraUtama')]; selects.forEach(s => { if(!s) return; const cur = s.value; s.innerHTML = (s.id === 'filterMitraUtama') ? '<option value="ALL">-- SEMUA MITRA --</option>' : ""; mitraData.forEach(m => { const o = document.createElement('option'); o.value = m.nama; o.innerText = m.nama; s.appendChild(o); }); s.value = cur || (s.id === 'filterMitraUtama' ? 'ALL' : (s.options[0]?.value || "")); }); }
+    function sortData(c) { if (currentSortCol === c) isAsc = !isAsc; else { currentSortCol = c; isAsc = true; } document.querySelectorAll('thead th span').forEach(el => el.innerText = ""); const icon = document.getElementById(`sort-${c}`); if(icon) icon.innerText = isAsc ? " ↑" : " ↓"; renderTable(); }
+    function debounceRender() { clearTimeout(timer); timer = setTimeout(renderTable, 300); }
+    function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
+    function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+    function openRekap() { document.getElementById('rekapModal').classList.remove('hidden'); }
+    function closeRekap() { document.getElementById('rekapModal').classList.add('hidden'); }
+    function openPrintOptions(idx) { activeIndex = idx; document.getElementById('printOptionsModal').classList.remove('hidden'); }
+    function closePrintModal() { document.getElementById('printOptionsModal').classList.add('hidden'); }
+    function executePrint() { const type = document.querySelector('input[name="printType"]:checked').value; closePrintModal(); generateInvoice(type); }
 
 
-// --- JAVASCRIPT KWITANSI MANUAL ---
-
-// 1. Fungsi Buka/Tutup Modal
 function openKwitansiManual() {
     // Tutup semua modal lain biar bersih
     document.getElementById('rekapModal').classList.add('hidden');
@@ -357,12 +518,6 @@ function closeKwitansiManual() {
     document.getElementById('kwitansiManualModal').classList.add('hidden');
 }
 
-// 2. Fungsi Otomatis Update Terbilang saat nominal diisi
-function updateTerbilangManual() {
-    const total = parseInt(document.getElementById('manTotal').value) || 0;
-    const teks = "# " + terbilang(total) + " rupiah #";
-    document.getElementById('manTerbilang').innerText = teks;
-}
 
 // 3. Fungsi Utama Cetak (Desain Kwitansi Manual)
 function cetakKwitansiManual() {
@@ -501,958 +656,21 @@ function cetakKwitansiManual() {
     win.document.close();
 }
 
-
-
 function pelunasanMasal() {
-    // 1. Cek apakah ada data di rekap (menggunakan variabel data yang difilter)
-    // Pastikan variabel currentFilteredData sudah terisi saat prosesRekap()
-    if (!currentFilteredData || currentFilteredData.length === 0) {
-        return alert("Tampilkan data rekap dulu baru bisa dilunasi masal, Bro!");
-    }
-
+    if (!currentFilteredData || currentFilteredData.length === 0) return alert("Data rekap kosong!");
     const namaBengkel = document.getElementById('rekapBengkel').value;
-    const jumlahData = currentFilteredData.length;
 
-    // 2. Konfirmasi
-    if (confirm(`Yakin mau melunasi SEMUA tagihan (${jumlahData} unit) untuk ${namaBengkel}?`)) {
-        
-        // 3. Proses ganti status di database utama (db)
-        // Kita looping database utama, jika ID-nya ada di dalam data rekap, ubah jadi LUNAS
-        db.forEach(item => {
-            const ditemukan = currentFilteredData.find(rekap => rekap.id === item.id);
-            if (ditemukan) {
-                item.status = 'LUNAS';
+    if (confirm(`Lunaskan SEMUA (${currentFilteredData.length} unit) untuk ${namaBengkel}?`)) {
+        currentFilteredData.forEach(item => {
+            // Update status ke LUNAS di Firebase berdasarkan fbKey masing-masing
+            if(item.fbKey) {
+                database.ref('sedjahtera/pengerjaan/' + item.fbKey).update({ status: 'LUNAS' });
             }
         });
-
-        // 4. SIMPAN PERUBAHAN KE LOCALSTORAGE (Ini yang paling penting!)
-        localStorage.setItem(DB_NAME, JSON.stringify(db));
-
-        // 5. UPDATE TAMPILAN
-        renderTable();      // Update tabel di halaman utama
-        prosesRekap();      // Update tabel di dalam modal rekap agar statusnya berubah hijau
-        
-        alert("Mantap Bro! Semua data di rekap ini sudah berhasil di-UPDATE ke LUNAS.");
+        alert("Berhasil melunasi masal di Cloud!");
+        closeRekap();
     }
 }
-
-
-        // --- MITRA MANAGEMENT ---
-function updateMitraSelects() {
-    // Ambil semua dropdown yang butuh daftar bengkel
-    const selects = [
-        document.getElementById('bengkelMitra'), 
-        document.getElementById('rekapBengkel'), 
-        document.getElementById('filterMitraUtama')
-    ];
-
-    selects.forEach(s => { 
-        if(!s) return; 
-        const curValue = s.value; // Simpan pilihan yang sedang dipilih
-        
-        // Kosongkan dan beri pilihan default jika itu filter utama
-        s.innerHTML = (s.id === 'filterMitraUtama') ? '<option value="ALL">-- SEMUA MITRA --</option>' : ""; 
-        
-        // Isi dengan data dari mitraData (Firebase)
-        mitraData.forEach(m => { 
-            const o = document.createElement('option'); 
-            o.value = m.nama; 
-            o.innerText = m.nama; 
-            s.appendChild(o); 
-        }); 
-        
-        // Kembalikan pilihan user tadi jika masih ada
-        s.value = curValue || (s.id === 'filterMitraUtama' ? 'ALL' : (s.options[0]?.value || ""));
-    });
-}
-
-function renderSettingsList() {
-    const listContainer = document.getElementById('bengkelListSettings'); 
-    if(!listContainer) return;
-    
-    listContainer.innerHTML = "";
-    
-    mitraData.forEach((m) => { 
-        listContainer.innerHTML += `
-            <div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
-                <div class="flex-1">
-                    <span class="text-blue-700 font-bold text-[9px]">${m.nama}</span>
-                    <p class="text-[7px] text-slate-400 uppercase italic truncate max-w-[180px]">${m.alamat || 'Alamat belum diisi'}</p>
-                </div>
-                <div class="flex gap-2 items-center">
-                    <button onclick="editBengkelCloud('${m.fbKey}', '${m.nama}', '${m.alamat || ''}')" class="text-blue-500 font-bold text-[9px] hover:underline">EDIT</button>
-                    <button onclick="hapusBengkelCloud('${m.fbKey}')" class="text-red-400 font-bold text-lg leading-none hover:text-red-600">&times;</button>
-                </div>
-            </div>`; 
-    });
-}
-
-
-function hapusMitraCloud(key) {
-    if (confirm("Hapus bengkel ini dari Cloud?")) {
-        // Hapus langsung ke folder mitra berdasarkan key uniknya
-        database.ref('sedjahtera/mitra/' + key).remove()
-            .then(() => {
-                alert("Bengkel berhasil dihapus!");
-            })
-            .catch((error) => {
-                alert("Gagal hapus: " + error.message);
-            });
-    }
-}
-
-
-
-function editBengkel(index) {
-    const m = mitraData[index];
-    // Masukkan data ke input atas untuk diedit
-    document.getElementById('newBengkelName').value = m.nama;
-    document.getElementById('newBengkelAddr').value = m.alamat || "";
-    
-    // Hapus data lama dulu agar tidak duplikat saat disimpan nanti
-    mitraData.splice(index, 1);
-    
-    // Beri fokus ke input nama
-    document.getElementById('newBengkelName').focus();
-    
-    // Info ke user
-    console.log("Sedang mengedit bengkel: " + m.nama);
-}
-
-
-function addNewBengkel() {
-    const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
-    const a = document.getElementById('newBengkelAddr').value.trim();
-    
-    if(n) {
-        // Langsung simpan ke folder mitra di Firebase
-        database.ref('sedjahtera/mitra').push({
-            nama: n,
-            alamat: a
-        }).then(() => {
-            // Kosongkan input setelah berhasil
-            document.getElementById('newBengkelName').value = "";
-            document.getElementById('newBengkelAddr').value = "";
-            alert("Bengkel Berhasil Ditambahkan ke Cloud!");
-        });
-    } else {
-        alert("Nama bengkel tidak boleh kosong, Bro!");
-    }
-}
-
-function hapusBengkelCloud(key) {
-    if(confirm("Hapus bengkel ini dari data Cloud?")) {
-        database.ref('sedjahtera/mitra/' + key).remove();
-    }
-}
-
-        function removeBengkel(i) { if(confirm("Hapus?")) { mitraData.splice(i, 1); localStorage.setItem('mitra_data_db', JSON.stringify(mitraData)); updateMitraSelects(); } }
-
-        // --- UTILS ---
-        function sortData(column) {
-            if (currentSortCol === column) isAsc = !isAsc; else { currentSortCol = column; isAsc = true; }
-            document.querySelectorAll('thead th span').forEach(el => el.innerText = "");
-            const icon = document.getElementById(`sort-${column}`);
-            if(icon) icon.innerText = isAsc ? " ↑" : " ↓";
-            renderTable();
-        }
-        function debounceRender() { clearTimeout(timer); timer = setTimeout(renderTable, 300); }
-        
-        function addPartRow(n = '', p = '') {
-            const div = document.createElement('div');
-            div.className = "flex gap-1 items-center part-item-row";
-            div.innerHTML = `<input type="text" placeholder="Item" value="${n}" class="p-name w-2/3 p-1.5 border border-slate-200 uppercase text-[9px] outline-none"><input type="number" placeholder="Rp" value="${p}" class="p-price w-1/3 p-1.5 border border-slate-200 font-bold text-blue-800 text-[9px] outline-none"><button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-red-500 text-base">&times;</button>`;
-            document.getElementById('partList').appendChild(div);
-        }
-
-function saveData() {
-    const nopol = document.getElementById('noPol').value;
-    if(!nopol) return alert("No Polisi Wajib!");
-    
-    let items = []; let total = 0;
-    document.querySelectorAll('.part-item-row').forEach(row => {
-        const name = row.querySelector('.p-name').value;
-        const price = parseInt(row.querySelector('.p-price').value) || 0;
-        if(name) { items.push({ name: name.toUpperCase(), price: price }); total += price; }
-    });
-
-    const editIndex = parseInt(document.getElementById('editIndex').value);
-    const entry = { 
-        id: editIndex === -1 ? `INV-${Date.now().toString().slice(-6)}` : db[editIndex].id, 
-        tgl: document.getElementById('tglKerja').value, 
-        mitra: document.getElementById('bengkelMitra').value, 
-        noPol: nopol.toUpperCase(), 
-        tipe: document.getElementById('tipeMobil').value.toUpperCase(), 
-        keluhan: document.getElementById('keluhan').value.toUpperCase(), 
-        sa: document.getElementById('sa_name').value.toUpperCase(), 
-        teknisi: document.getElementById('teknisi').value.toUpperCase(), 
-        items: items, 
-        total: total, 
-        status: editIndex === -1 ? 'BELUM' : db[editIndex].status 
-    };
-
-    if(editIndex === -1) {
-        // Simpan Data Baru ke Cloud
-        database.ref('sedjahtera/pengerjaan').push(entry);
-    } else {
-        // Update Data di Cloud pakai Key
-        const key = db[editIndex].fbKey;
-        database.ref('sedjahtera/pengerjaan/' + key).update(entry);
-    }
-    
-    resetForm();
-    alert("Data Berhasil Tersimpan di Cloud!");
-}
-
-        function resetForm() {
-            document.getElementById('editIndex').value = "-1";
-            document.getElementById('noPol').value = ""; document.getElementById('tipeMobil').value = "";
-            document.getElementById('sa_name').value = ""; document.getElementById('teknisi').value = "";
-            document.getElementById('keluhan').value = ""; document.getElementById('partList').innerHTML = "";
-            addPartRow(); document.getElementById('tglKerja').value = new Date().toISOString().split('T')[0];
-            document.getElementById('formTitle').innerText = "Input Pengerjaan";
-        }
-
-        function editData(idx) {
-            const d = db[idx]; document.getElementById('editIndex').value = idx; 
-            document.getElementById('bengkelMitra').value = d.mitra; document.getElementById('noPol').value = d.noPol; 
-            document.getElementById('tipeMobil').value = d.tipe; document.getElementById('sa_name').value = d.sa || "";
-            document.getElementById('teknisi').value = d.teknisi || ""; document.getElementById('tglKerja').value = d.tgl; 
-            document.getElementById('keluhan').value = d.keluhan; document.getElementById('partList').innerHTML = ""; 
-            d.items.forEach(it => addPartRow(it.name, it.price)); 
-            document.getElementById('formTitle').innerText = "Edit Data " + d.id;
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-
-function toggleStatus(idx) { 
-    const key = db[idx].fbKey;
-    const newStatus = db[idx].status === 'LUNAS' ? 'BELUM' : 'LUNAS';
-    database.ref('sedjahtera/pengerjaan/' + key).update({ status: newStatus });
-}
-
-function hapusData(idx) { 
-    if(confirm("Hapus Data dari Cloud?")) { 
-        const key = db[idx].fbKey;
-        database.ref('sedjahtera/pengerjaan/' + key).remove();
-    } 
-}
-
-// Tambahkan juga untuk tambah bengkel mitra
-function addNewBengkel() {
-    const n = document.getElementById('newBengkelName').value.trim().toUpperCase();
-    const a = document.getElementById('newBengkelAddr').value.trim();
-    if(n) {
-        database.ref('sedjahtera/mitra').push({ nama: n, alamat: a });
-        document.getElementById('newBengkelName').value = "";
-        document.getElementById('newBengkelAddr').value = "";
-    }
-}
-
-
-        function exportData() { const dl = document.createElement('a'); dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({db, mitraData})); dl.download = "BACKUP_SM.json"; dl.click(); }
-        function importData(e) { const r = new FileReader(); r.onload = function(ex) { const d = JSON.parse(ex.target.result); db = d.db; mitraData = d.mitra; localStorage.setItem(DB_NAME, JSON.stringify(db)); localStorage.setItem('mitra_data_db', JSON.stringify(mitraData)); location.reload(); }; r.readAsText(e.target.files[0]); }
-        
-        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-        function openRekap() { document.getElementById('rekapModal').classList.remove('hidden'); }
-        function closeRekap() { document.getElementById('rekapModal').classList.add('hidden'); }
-        function openPrintOptions(idx) { activeIndex = idx; document.getElementById('printOptionsModal').classList.remove('hidden'); }
-        function closePrintModal() { document.getElementById('printOptionsModal').classList.add('hidden'); }
-        function executePrint() { const type = document.querySelector('input[name="printType"]:checked').value; closePrintModal(); generateInvoice(type); }
-        
-function terbilang(n) {
-    if (n === 0) return "nol";
-    const angka = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
-    let hasil = "";
-
-    if (n < 12) hasil = angka[n];
-    else if (n < 20) hasil = terbilang(n - 10) + " belas";
-    else if (n < 100) hasil = terbilang(Math.floor(n / 10)) + " puluh " + (n % 10 !== 0 ? terbilang(n % 10) : "");
-    else if (n < 200) hasil = "seratus " + (n - 100 !== 0 ? terbilang(n - 100) : "");
-    else if (n < 1000) hasil = terbilang(Math.floor(n / 100)) + " ratus " + (n % 100 !== 0 ? terbilang(n % 100) : "");
-    else if (n < 2000) hasil = "seribu " + (n - 1000 !== 0 ? terbilang(n - 1000) : "");
-    else if (n < 1000000) hasil = terbilang(Math.floor(n / 1000)) + " ribu " + (n % 1000 !== 0 ? terbilang(n % 1000) : "");
-    else if (n < 1000000000) hasil = terbilang(Math.floor(n / 1000000)) + " juta " + (n % 1000000 !== 0 ? terbilang(n % 1000000) : "");
-    else if (n < 1000000000000) hasil = terbilang(Math.floor(n / 1000000000)) + " milyar " + (n % 1000000000 !== 0 ? terbilang(n % 1000000000) : "");
-    
-    return hasil.trim().replace(/\s+/g, ' ');
-}
-
-function updateTerbilangManual() {
-    const total = parseInt(document.getElementById('manTotal').value) || 0;
-    document.getElementById('manTerbilang').innerText = "# " + terbilang(total) + " rupiah #";
-}
-
-        // --- SISTEM CETAK ---
-function generateInvoice(type) {
-
-
-
-    const data = db[activeIndex];
-
-
-
-    const mitraObj = mitraData.find(m => m.nama === data.mitra);
-
-
-
-    let alamatHTML = (mitraObj && mitraObj.alamat) ? mitraObj.alamat.replace(/\n/g, "<br>") : "DI TEMPAT";
-
-
-
-
-
-
-
-    let allItems = data.items;
-
-
-
-    if(type === 'jasa') {
-
-
-
-        allItems = data.items.filter(it => it.name.includes("JASA") || it.name.includes("SERVICE"));
-
-
-
-    } else if(type === 'bahan') {
-
-
-
-        allItems = data.items.filter(it => !it.name.includes("JASA") && !it.name.includes("SERVICE"));
-
-
-
-    }
-
-
-
-
-
-
-
-    const maxItemsPerPage = 12; 
-
-
-
-    const totalPages = Math.ceil(allItems.length / maxItemsPerPage) || 1;
-
-
-
-    let grandTotal = allItems.reduce((sum, item) => sum + item.price, 0);
-
-
-
-
-
-
-
-    let htmlContent = "";
-
-
-
-
-
-
-
-    for (let p = 0; p < totalPages; p++) {
-
-
-
-        const isLastPage = (p === totalPages - 1);
-
-
-
-        const start = p * maxItemsPerPage;
-
-
-
-        const pageItems = allItems.slice(start, start + maxItemsPerPage);
-
-
-
-        
-
-
-
-        let rows = pageItems.map((it, i) => `
-
-
-
-            <tr>
-
-
-
-                <td style="text-align: center; border-right: 1.5px solid #000; padding: 3px;">${start + i + 1}</td>
-
-
-
-                <td style="padding: 3px 8px; border-right: 1.5px solid #000; text-transform: uppercase;">${it.name}</td>
-
-
-
-                <td style="text-align: center; border-right: 1.5px solid #000; padding: 3px;">1</td>
-
-
-
-                <td style="text-align: right; border-right: 1.5px solid #000; padding: 3px 8px;">${it.price.toLocaleString()}</td>
-
-
-
-                <td style="text-align: right; padding: 3px 8px;">${it.price.toLocaleString()}</td>
-
-
-
-            </tr>
-
-
-
-        `).join('');
-
-
-
-
-
-
-
-        if (pageItems.length < maxItemsPerPage) {
-
-
-
-            for(let j = pageItems.length; j < maxItemsPerPage; j++) {
-
-
-
-                rows += `<tr><td style="border-right: 1.5px solid #000; height: 18px;"></td><td style="border-right: 1.5px solid #000;"></td><td style="border-right: 1.5px solid #000;"></td><td style="border-right: 1.5px solid #000;"></td><td></td></tr>`;
-
-
-
-            }
-
-
-
-        }
-
-
-
-
-
-
-
-        htmlContent += `
-
-
-
-            <div class="page-container">
-
-
-
-                <div class="header">
-
-
-
-<div class="logo-section">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <img src="${URL_LOGO_SM}" style="height: 45px; object-fit: contain;">
-        <div style="font-family: 'Times New Roman', Times, serif; font-size: 22px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px; text-transform: uppercase;">SEDJAHTERA MOTOR</div>
-    </div>
-    <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center; padding-left: 5px;">
-        <img src="${URL_LOGO_DENSO}" style="height: 13px;">
-        <img src="${URL_LOGO_SANDEN}" style="height: 13px;">
-        <img src="${URL_LOGO_VALEO}" style="height: 13px;">
-    </div>
-</div>
-
-
-
-                    <div class="bengkel-info" style="text-align: right;">
-
-
-
-                        <div style="font-weight: bold; font-size: 7.5px; color: #1e3a8a;">CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES</div>
-
-
-
-                        <div style="font-size: 7.5px; color: #333; line-height: 1.2;">
-
-
-
-                            Jl. Cendrawasih Blok F 280, Bekasi Barat<br>
-
-
-
-                            Telp. (021) 88874043 Hp. 0813 1096 2274
-
-
-
-                        </div>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-
-
-
-
-                <div class="invoice-title-row">
-
-
-
-                    <span>Invoice No. ${data.id}</span>
-
-
-
-                </div>
-
-
-
-
-
-
-
-                <div class="customer-section">
-
-
-
-                    <div style="width: 55%; padding-right: 10px;">
-
-
-
-                        <span style="font-size: 8px; font-weight: bold;">Kepada Yth,</span><br>
-
-
-
-                        <div style="font-size: 9.5px; line-height: 1.3; font-weight: bold; overflow-wrap: break-word;">
-
-
-
-                            ${alamatHTML}
-
-
-
-                        </div>
-
-
-
-                    </div>
-
-
-
-                    <div style="text-align: right; width: 45%;">
-
-
-
-                        <div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">Tgl, ${data.tgl.split('-').reverse().join(' - ')}</div>
-
-
-
-                        <div style="font-size: 12px; font-weight: 600; line-height: 1;">${data.noPol}</div>
-
-
-
-                        <div style="font-size: 10px; font-weight: bold; color: #555; margin-top: 2px;">${data.tipe}</div>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-
-
-
-
-                <table>
-
-
-
-                    <thead>
-
-
-
-                        <tr>
-
-
-
-                            <th style="width: 4%;">No.</th>
-
-
-
-                            <th style="width: 54%;">Nama Barang / Jasa</th>
-
-
-
-                            <th style="width: 8%;">Qty</th>
-
-
-
-                            <th style="width: 14%;">Harga Satuan</th>
-
-
-
-                            <th style="width: 20%;">Jumlah</th>
-
-
-
-                        </tr>
-
-
-
-                    </thead>
-
-
-
-                    <tbody>${rows}</tbody>
-
-
-
-                </table>
-
-
-
-
-
-
-
-                <div class="footer-area">
-
-
-
-                    <div class="page-info">Halaman ${p + 1} dari ${totalPages}</div>
-
-
-
-                    ${isLastPage ? `
-
-
-
-                        <div class="total-box">
-
-
-
-                            <span style="font-size: 9px;">SUB TOTAL</span>
-
-
-
-                            <span>Rp ${grandTotal.toLocaleString()}</span>
-
-
-
-                        </div>
-
-
-
-                    ` : `<div></div>`}
-
-
-
-                </div>
-
-
-
-
-
-
-
-                ${isLastPage ? `
-
-
-
-                <div class="signature-row">
-
-
-
-                    <div class="sign-box"></div>
-
-
-
-                    <div class="sign-box"><br>
-
-
-
-                        Hormat Kami,<br><br><br><br><br><br>
-
-
-
-                        <b style="solid #000; padding: 0 5px;">Yudiono</b>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-                ` : `<div style="height: 60px;"></div>`}
-
-
-
-            </div>
-
-
-
-        `;
-
-
-
-    }
-
-
-
-
-
-
-
-    const win = window.open('', '_blank');
-
-
-
-    win.document.write(`
-
-
-
-        <html>
-
-
-
-        <head>
-
-
-
-            <title>Invoice - ${data.noPol}</title>
-
-
-
-            <style>
-
-
-
-                @page { size: A5 landscape; margin: 0; }
-
-
-
-                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; }
-
-
-
-                .page-container { 
-
-
-
-                    background: white; 
-
-
-
-                    width: 210mm; height: 148mm; 
-
-
-
-                    margin: 0 auto; padding: 6mm 10mm; 
-
-
-
-                    box-sizing: border-box; 
-
-
-
-                    position: relative;
-
-
-
-                    page-break-after: always;
-
-
-
-                }
-
-
-
-                .header { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
-
-
-
-                .invoice-title-row { display: flex; justify-content: space-between; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; padding: 3px 0; margin-bottom: 5px; font-weight: 900; font-size: 10px; }
-
-
-
-                .customer-section { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: flex-start; }
-
-
-
-                table { width: 100%; border: 1.5px solid #000; border-collapse: collapse; font-size: 9.5px; }
-
-
-
-                th { border: 1.5px solid #000; padding: 4px; background: #f2f2f2; font-weight: 900; text-transform: uppercase; }
-
-
-
-                /* MODIFIKASI TD: font-weight normal (tidak bold) agar tidak medok */
-
-
-
-                td { font-weight: normal; } 
-
-
-
-                .footer-area { display: flex; justify-content: space-between; margin-top: 5px; align-items: center; }
-
-
-
-                .page-info { font-size: 7px; font-weight: bold; color: #888; }
-
-
-
-                .total-box { display: flex; gap: 15px; font-weight: 900; font-size: 12px; border: 1.8px solid #000; padding: 4px 12px; align-items: center; }
-
-
-
-                .signature-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 9px; text-align: center; }
-
-
-
-                .sign-box { width: 33%; }
-
-
-
-                @media print { body { background: none; } .page-container { margin: 0; } }
-
-
-
-            </style>
-
-
-
-        </head>
-
-
-
-        <body onload="window.print(); window.close();">${htmlContent}</body>
-
-
-
-        </html>
-
-
-
-    `);
-
-
-
-    win.document.close();
-
-
-
-}
-
-
-function generateKwitansiSatuan(idx) {
-    const data = db[idx];
-    const teksTerbilang = "# " + terbilang(data.total) + " rupiah #";
-
-    const win = window.open('', '_blank');
-    win.document.write(`
-        <html>
-        <head>
-            <title>Kwitansi - ${data.noPol}</title>
-            <style>
-                @page { size: A5 landscape; margin: 5mm; }
-                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background: #fff; display: flex; justify-content: center; }
-                .kwitansi-border { width: 190mm; height: 125mm; margin-top: 5mm; padding: 10mm; border: 1.5px solid #000; box-sizing: border-box; position: relative; background: white; }
-                .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; align-items: center; }
-                .logo-text b { font-family: 'Times New Roman', serif; font-size: 20px; color: #1e3a8a; letter-spacing: 0.5px; }
-                .info-bengkel { font-size: 8px; font-weight: bold; line-height: 1.3; text-align: center; flex: 1; }
-                .content-row { display: flex; margin-bottom: 10px; font-size: 11px; }
-                .label { width: 140px; font-weight: bold; }
-                .separator { width: 20px; }
-                .value { flex: 1; border-bottom: 1px dotted #999; text-transform: uppercase; font-weight: bold; min-height: 15px; }
-                .terbilang-box { background: #f3f4f6; padding: 6px; font-style: italic; border: 1px solid #ccc; text-transform: capitalize; }
-                .footer { position: absolute; bottom: 35px; right: 50px; text-align: center; }
-                .footer-left { position: absolute; bottom: 35px; left: 50px; font-size: 8.5px; font-style: italic; line-height: 1.4; }
-                .ttd-nama { margin-top: 55px; font-weight: bold; border-bottom: 1.5px solid #000; display: inline-block; padding: 0 15px; }
-                @media print { body { background: none; } .kwitansi-border { margin-top: 5mm; } }
-            </style>
-        </head>
-        <body onload="window.print(); window.close();">
-            <div class="kwitansi-border">
-                <div class="header">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <img src="${URL_LOGO_SM}" style="height: 35px;">
-                        <div class="logo-text"><b>CV. SEDJAHTERA MOTOR</b></div>
-                    </div>
-                    <div class="info-bengkel">
-                        CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES<br>
-                        Jl. Cendrawasih Blok F 280, Bekasi Barat Telp. (021) 88874043 Hp 081310962274<br>
-                        Email: sedjahteraac@yahoo.com
-                    </div>
-                    <img src="${URL_LOGO_DENSO}" style="height: 12px;">
-                </div>
-
-                <div style="text-align: center; font-size: 16px; font-weight: 900; text-decoration: underline; margin-bottom: 20px; letter-spacing: 2px;">KWITANSI</div>
-
-                <div class="content-row">
-                    <div class="label">No</div><div class="separator">:</div>
-                    <div class="value">${data.id.replace('INV-', 'TC/')}</div>
-                </div>
-                <div class="content-row">
-                    <div class="label">Telah Terima Dari</div><div class="separator">:</div>
-                    <div class="value">${data.mitra}</div>
-                </div>
-                <div class="content-row">
-                    <div class="label">Jumlah</div><div class="separator">:</div>
-                    <div class="value" style="font-size: 13px;">Rp ${data.total.toLocaleString()}</div>
-                </div>
-                <div class="content-row">
-                    <div class="label">Terbilang</div><div class="separator">:</div>
-                    <div class="value terbilang-box">${teksTerbilang}</div>
-                </div>
-                <div class="content-row">
-                    <div class="label">Untuk Pembayaran</div><div class="separator">:</div>
-                    <div class="value">Perbaikan AC Unit ${data.tipe} (${data.noPol})</div>
-                </div>
-
-                <div class="footer-left">
-                    Pembayaran Transfer ke Rekening 701842995<br>
-                    Bank Permata Cabang Harapan Indah<br>
-                    a/n CV. SEDJAHTERA MOTOR
-                </div>
-
-                <div class="footer">
-                    Bekasi, ${data.tgl.split('-').reverse().join(' - ')}<br><br>
-                    <div style="font-size: 9px; font-weight: bold;">CV. SEDJAHTERA MOTOR</div>
-                    <div class="ttd-nama">Yudiono</div>
-                </div>
-            </div>
-        </body>
-        </html>
-    `);
-    win.document.close();
-}
-
-
-
-
-
-
-
-
-
-
 
 function generateKwitansi() {
     if (currentFilteredData.length === 0) return alert("Tampilkan data rekap dulu, Bro!");
@@ -1543,27 +761,340 @@ function generateKwitansi() {
     win.document.close();
 }
 
+// Fungsi Cetak Rekapan agar tidak kosong
+function printRekap() {
+    if (!currentFilteredData || currentFilteredData.length === 0) return alert("Tampilkan data rekap dulu, baru cetak!");
+
+    const bengkel = document.getElementById('rekapBengkel').value;
+    const tglStart = document.getElementById('rekapStart').value;
+    const tglEnd = document.getElementById('rekapEnd').value;
+    let totalNominal = 0;
+
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <html>
+        <head>
+            <title>Cetak Rekap - ${bengkel}</title>
+            <style>
+                body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
+                .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                th { background: #f1f5f9; text-transform: uppercase; }
+                .text-right { text-align: right; }
+                .footer { margin-top: 30px; display: flex; justify-content: space-between; }
+                .total-row { background: #1e293b; color: white; font-weight: bold; }
+                @media print { .no-print { display: none; } }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            <div class="header">
+                <h2 style="margin:0;">REKAPITULASI TAGIHAN</h2>
+                <h3 style="margin:5px 0; color: #1e3a8a;">${bengkel}</h3>
+                <p style="font-size: 10px;">Periode: ${tglStart} s/d ${tglEnd}</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tgl</th>
+                        <th>No Polisi</th>
+                        <th>Unit</th>
+                        <th>SA / Teknisi</th>
+                        <th class="text-right">Tagihan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${currentFilteredData.map(d => {
+                        totalNominal += d.total;
+                        return `
+                            <tr>
+                                <td>${d.tgl}</td>
+                                <td><b>${d.noPol}</b></td>
+                                <td>${d.tipe}</td>
+                                <td>${d.sa || '-'} / ${d.teknisi || '-'}</td>
+                                <td class="text-right">Rp ${d.total.toLocaleString()}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4" class="text-right">TOTAL TAGIHAN:</td>
+                        <td class="text-right">Rp ${totalNominal.toLocaleString()}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <div class="footer">
+                <div>Dicetak pada: ${new Date().toLocaleString('id-ID')}</div>
+                <div style="text-align:center;">
+                    Hormat Kami,<br><br><br><br>
+                    <b>( Yudiono )</b>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
 
 
-        function prosesRekap() {
-            const b = document.getElementById('rekapBengkel').value;
-            const s = document.getElementById('rekapStart').value;
-            const e = document.getElementById('rekapEnd').value;
-            if(!s || !e) return alert("Pilih tanggal!");
-            currentFilteredData = db.filter(d => d.mitra === b && d.tgl >= s && d.tgl <= e);
-            const tbody = document.getElementById('rekapTableBody'); tbody.innerHTML = ""; let t = 0;
-            currentFilteredData.forEach(d => { t += d.total; tbody.innerHTML += `<tr><td class="p-2">${d.tgl}</td><td class="p-2">${d.noPol}</td><td class="p-2">${d.tipe}</td><td class="p-2 uppercase opacity-60">${d.sa || '-'}</td> <td class="p-2 text-right">Rp ${d.total.toLocaleString()}</td></tr>`; });
-            document.getElementById('totalTagihanRekap').innerText = `Rp ${t.toLocaleString()}`;
-            document.getElementById('hasilRekap').classList.remove('hidden');
+function terbilang(n) {
+    if (n === 0) return "nol";
+    const angka = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+    let hasil = "";
+
+    if (n < 12) hasil = angka[n];
+    else if (n < 20) hasil = terbilang(n - 10) + " belas";
+    else if (n < 100) hasil = terbilang(Math.floor(n / 10)) + " puluh " + (n % 10 !== 0 ? terbilang(n % 10) : "");
+    else if (n < 200) hasil = "seratus " + (n - 100 !== 0 ? terbilang(n - 100) : "");
+    else if (n < 1000) hasil = terbilang(Math.floor(n / 100)) + " ratus " + (n % 100 !== 0 ? terbilang(n % 100) : "");
+    else if (n < 2000) hasil = "seribu " + (n - 1000 !== 0 ? terbilang(n - 1000) : "");
+    else if (n < 1000000) hasil = terbilang(Math.floor(n / 1000)) + " ribu " + (n % 1000 !== 0 ? terbilang(n % 1000) : "");
+    else if (n < 1000000000) hasil = terbilang(Math.floor(n / 1000000)) + " juta " + (n % 1000000 !== 0 ? terbilang(n % 1000000) : "");
+    else if (n < 1000000000000) hasil = terbilang(Math.floor(n / 1000000000)) + " milyar " + (n % 1000000000 !== 0 ? terbilang(n % 1000000000) : "");
+    
+    return hasil.trim().replace(/\s+/g, ' ');
+}
+
+function updateTerbilangManual() {
+    const total = parseInt(document.getElementById('manTotal').value) || 0;
+    document.getElementById('manTerbilang').innerText = "# " + terbilang(total) + " rupiah #";
+}
+
+function generateKwitansiSatuan(idx) {
+    const data = db[idx];
+    const teksTerbilang = "# " + terbilang(data.total) + " rupiah #";
+
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <html>
+        <head>
+            <title>Kwitansi - ${data.noPol}</title>
+            <style>
+                @page { size: A5 landscape; margin: 5mm; }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background: #fff; display: flex; justify-content: center; }
+                .kwitansi-border { width: 190mm; height: 125mm; margin-top: 5mm; padding: 10mm; border: 1.5px solid #000; box-sizing: border-box; position: relative; background: white; }
+                .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; align-items: center; }
+                .logo-text b { font-family: 'Times New Roman', serif; font-size: 20px; color: #1e3a8a; letter-spacing: 0.5px; }
+                .info-bengkel { font-size: 8px; font-weight: bold; line-height: 1.3; text-align: center; flex: 1; }
+                .content-row { display: flex; margin-bottom: 10px; font-size: 11px; }
+                .label { width: 140px; font-weight: bold; }
+                .separator { width: 20px; }
+                .value { flex: 1; border-bottom: 1px dotted #999; text-transform: uppercase; font-weight: bold; min-height: 15px; }
+                .terbilang-box { background: #f3f4f6; padding: 6px; font-style: italic; border: 1px solid #ccc; text-transform: capitalize; }
+                .footer { position: absolute; bottom: 35px; right: 50px; text-align: center; }
+                .footer-left { position: absolute; bottom: 35px; left: 50px; font-size: 8.5px; font-style: italic; line-height: 1.4; }
+                .ttd-nama { margin-top: 55px; font-weight: bold; border-bottom: 1.5px solid #000; display: inline-block; padding: 0 15px; }
+                @media print { body { background: none; } .kwitansi-border { margin-top: 5mm; } }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            <div class="kwitansi-border">
+                <div class="header">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="${URL_LOGO_SM}" style="height: 35px;">
+                        <div class="logo-text"><b>CV. SEDJAHTERA MOTOR</b></div>
+                    </div>
+                    <div class="info-bengkel">
+                        CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES<br>
+                        Jl. Cendrawasih Blok F 280, Bekasi Barat Telp. (021) 88874043 Hp 081310962274<br>
+                        Email: sedjahteraac@yahoo.com
+                    </div>
+                    <img src="${URL_LOGO_DENSO}" style="height: 12px;">
+                </div>
+
+                <div style="text-align: center; font-size: 16px; font-weight: 900; text-decoration: underline; margin-bottom: 20px; letter-spacing: 2px;">KWITANSI</div>
+
+                <div class="content-row">
+                    <div class="label">No</div><div class="separator">:</div>
+                    <div class="value">${data.id.replace('INV-', 'TC/')}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Telah Terima Dari</div><div class="separator">:</div>
+                    <div class="value">${data.mitra}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Jumlah</div><div class="separator">:</div>
+                    <div class="value" style="font-size: 13px;">Rp ${data.total.toLocaleString()}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Terbilang</div><div class="separator">:</div>
+                    <div class="value terbilang-box">${teksTerbilang}</div>
+                </div>
+                <div class="content-row">
+                    <div class="label">Untuk Pembayaran</div><div class="separator">:</div>
+                    <div class="value">Perbaikan AC Unit ${data.tipe} (${data.noPol})</div>
+                </div>
+
+                <div class="footer-left">
+                    Pembayaran Transfer ke Rekening 701842995<br>
+                    Bank Permata Cabang Harapan Indah<br>
+                    a/n CV. SEDJAHTERA MOTOR
+                </div>
+
+                <div class="footer">
+                    Bekasi, ${data.tgl.split('-').reverse().join(' - ')}<br><br>
+                    <div style="font-size: 9px; font-weight: bold;">CV. SEDJAHTERA MOTOR</div>
+                    <div class="ttd-nama">Yudiono</div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
+
+function generateInvoice(type) {
+    const data = db[activeIndex];
+    const mitraObj = mitraData.find(m => m.nama === data.mitra);
+    let alamatHTML = (mitraObj && mitraObj.alamat) ? mitraObj.alamat.replace(/\n/g, "<br>") : "DI TEMPAT";
+    let allItems = data.items;
+    if(type === 'jasa') {
+        allItems = data.items.filter(it => it.name.includes("JASA") || it.name.includes("SERVICE"));
+    } else if(type === 'bahan') {
+        allItems = data.items.filter(it => !it.name.includes("JASA") && !it.name.includes("SERVICE"));
+    }
+    const maxItemsPerPage = 12; 
+    const totalPages = Math.ceil(allItems.length / maxItemsPerPage) || 1;
+    let grandTotal = allItems.reduce((sum, item) => sum + item.price, 0);
+    let htmlContent = "";
+    for (let p = 0; p < totalPages; p++) {
+   const isLastPage = (p === totalPages - 1);
+   const start = p * maxItemsPerPage;
+    const pageItems = allItems.slice(start, start + maxItemsPerPage);
+    let rows = pageItems.map((it, i) => `
+            <tr>
+                <td style="text-align: center; border-right: 1.5px solid #000; padding: 3px;">${start + i + 1}</td>
+                <td style="padding: 3px 8px; border-right: 1.5px solid #000; text-transform: uppercase;">${it.name}</td>
+                <td style="text-align: center; border-right: 1.5px solid #000; padding: 3px;">1</td>
+                <td style="text-align: right; border-right: 1.5px solid #000; padding: 3px 8px;">${it.price.toLocaleString()}</td>
+                <td style="text-align: right; padding: 3px 8px;">${it.price.toLocaleString()}</td>
+            </tr>
+        `).join('');
+
+        if (pageItems.length < maxItemsPerPage) {
+            for(let j = pageItems.length; j < maxItemsPerPage; j++) {
+                rows += `<tr><td style="border-right: 1.5px solid #000; height: 18px;"></td><td style="border-right: 1.5px solid #000;"></td><td style="border-right: 1.5px solid #000;"></td><td style="border-right: 1.5px solid #000;"></td><td></td></tr>`;
+            }
         }
 
-        // --- BOOTSTRAP ---
-        window.addEventListener('load', () => {
-            updateMitraSelects();
-            renderTable();
-            document.getElementById('tglKerja').value = new Date().toISOString().split('T')[0];
-            if(document.getElementById('partList').innerHTML === "") addPartRow();
-        });
-    </script>
+        htmlContent += `
+            <div class="page-container">
+                <div class="header">
+<div class="logo-section">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="${URL_LOGO_SM}" style="height: 45px; object-fit: contain;">
+        <div style="font-family: 'Times New Roman', Times, serif; font-size: 22px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px; text-transform: uppercase;">SEDJAHTERA MOTOR</div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center; padding-left: 5px;">
+        <img src="${URL_LOGO_DENSO}" style="height: 13px;">
+        <img src="${URL_LOGO_SANDEN}" style="height: 13px;">
+        <img src="${URL_LOGO_VALEO}" style="height: 13px;">
+    </div>
+</div>
+                    <div class="bengkel-info" style="text-align: right;">
+                        <div style="font-weight: bold; font-size: 7.5px; color: #1e3a8a;">CAR AIR CONDITIONER SALES SERVICE & ACCESSORIES</div>
+                        <div style="font-size: 7.5px; color: #333; line-height: 1.2;">
+                            Jl. Cendrawasih Blok F 280, Bekasi Barat<br>
+                            Telp. (021) 88874043 Hp. 0813 1096 2274
+                        </div>
+                    </div>
+                </div>
+                <div class="invoice-title-row">
+                    <span>Invoice No. ${data.id}</span>
+                </div>
+                <div class="customer-section">
+                    <div style="width: 55%; padding-right: 10px;">
+                        <span style="font-size: 8px; font-weight: bold;">Kepada Yth,</span><br>
+                        <div style="font-size: 9.5px; line-height: 1.3; font-weight: bold; overflow-wrap: break-word;">
+                            ${alamatHTML}
+                        </div>
+                    </div>
+                    <div style="text-align: right; width: 45%;">
+                        <div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">Tgl, ${data.tgl.split('-').reverse().join(' - ')}</div>
+                        <div style="font-size: 12px; font-weight: 600; line-height: 1;">${data.noPol}</div>
+                        <div style="font-size: 10px; font-weight: bold; color: #555; margin-top: 2px;">${data.tipe}</div>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 4%;">No.</th>
+                            <th style="width: 54%;">Nama Barang / Jasa</th>
+                            <th style="width: 8%;">Qty</th>
+                            <th style="width: 14%;">Harga Satuan</th>
+                            <th style="width: 20%;">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="footer-area">
+                    <div class="page-info">Halaman ${p + 1} dari ${totalPages}</div>
+                    ${isLastPage ? `
+                        <div class="total-box">
+                            <span style="font-size: 9px;">SUB TOTAL</span>
+                            <span>Rp ${grandTotal.toLocaleString()}</span>
+                        </div>
+                    ` : `<div></div>`}
+                </div>
+
+                ${isLastPage ? `
+                <div class="signature-row">
+                    <div class="sign-box"></div>
+                    <div class="sign-box"><br>
+                        Hormat Kami,<br><br><br><br><br><br>
+                        <b style="solid #000; padding: 0 5px;">Yudiono</b>
+                    </div>
+                </div>
+                ` : `<div style="height: 60px;"></div>`}
+            </div>
+        `;
+    }
+    const win = window.open('', '_blank');
+    win.document.write(`
+
+        <html>
+        <head>
+            <title>Invoice - ${data.noPol}</title>
+            <style>
+                @page { size: A5 landscape; margin: 0; }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; }
+                .page-container { 
+                    background: white; 
+                    width: 210mm; height: 148mm; 
+                    margin: 0 auto; padding: 6mm 10mm; 
+                    box-sizing: border-box; 
+                    position: relative;
+                    page-break-after: always;
+                }
+                .header { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
+                .invoice-title-row { display: flex; justify-content: space-between; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; padding: 3px 0; margin-bottom: 5px; font-weight: 900; font-size: 10px; }
+                .customer-section { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: flex-start; }
+                table { width: 100%; border: 1.5px solid #000; border-collapse: collapse; font-size: 9.5px; }
+                th { border: 1.5px solid #000; padding: 4px; background: #f2f2f2; font-weight: 900; text-transform: uppercase; }
+                /* MODIFIKASI TD: font-weight normal (tidak bold) agar tidak medok */
+                td { font-weight: normal; } 
+                .footer-area { display: flex; justify-content: space-between; margin-top: 5px; align-items: center; }
+                .page-info { font-size: 7px; font-weight: bold; color: #888; }
+                .total-box { display: flex; gap: 15px; font-weight: 900; font-size: 12px; border: 1.8px solid #000; padding: 4px 12px; align-items: center; }
+                .signature-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 9px; text-align: center; }
+                .sign-box { width: 33%; }
+                @media print { body { background: none; } .page-container { margin: 0; } }
+
+           </style>
+        </head>
+        <body onload="window.print(); window.close();">${htmlContent}</body>
+        </html>
+
+    `);
+    win.document.close();
+}
+
+
+    window.addEventListener('load', () => {
+        document.getElementById('tglKerja').value = new Date().toISOString().split('T')[0];
+        if(document.getElementById('partList').innerHTML === "") addPartRow();
+    });
+</script>
 </body>
 </html>
