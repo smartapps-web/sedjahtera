@@ -40,11 +40,11 @@
         <div class="space-y-4">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase block mb-1">Username</label>
-                <input type="text" id="userLogin" class="w-full p-3 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] uppercase focus:border-blue-500">
+                <input type="text" id="userLogin" class="w-full p-2 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] uppercase focus:border-blue-500">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase block mb-1">Password</label>
-                <input type="password" id="passLogin" class="w-full p-3 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] focus:border-blue-500">
+                <input type="password" id="passLogin" class="w-full p-2 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] focus:border-blue-500">
             </div>
             <button onclick="cekLogin()" class="w-full bg-blue-600 text-white py-3 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg active:scale-95">MASUK SISTEM</button>
         </div>
@@ -98,16 +98,28 @@
             <div class="flex items-end"><button onclick="prosesRekap()" class="w-full bg-blue-600 text-white py-2 text-[9px] font-bold uppercase">Tampilkan</button></div>
         </div>
         <div id="hasilRekap" class="hidden">
-            <div class="flex gap-2 mb-3">
-                <button onclick="printRekap()" class="flex-1 bg-slate-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest">🖨️ Cetak Rekapan</button>
-                <button onclick="generateKwitansi()" class="flex-1 bg-blue-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">🧾 Kwitansi Total</button>
-                <button onclick="pelunasanMasal()" class="flex-1 bg-emerald-600 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">✔️ Lunaskan Semua</button>
-            </div>
+<div class="flex gap-2 mb-3">
+    <button onclick="printRekap()" class="flex-1 bg-slate-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest">🖨️ Cetak Rekapan</button>
+    
+    <button onclick="exportExcelRekap()" class="flex-1 bg-emerald-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md italic">📊 Export Excel</button>
+    
+    <button onclick="generateKwitansi()" class="flex-1 bg-blue-700 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">🧾 Kwitansi Total</button>
+    <button onclick="pelunasanMasal()" class="flex-1 bg-emerald-600 text-white py-2 text-[9px] font-bold uppercase tracking-widest shadow-md">✔️ Lunaskan Semua</button>
+</div>
             <div class="border border-slate-200 overflow-hidden mb-2">
                 <table class="w-full text-[9px] text-left">
-                    <thead class="bg-slate-50 text-slate-400 uppercase text-[7px] font-bold border-b">
-                        <tr><th class="p-2">Tgl</th><th class="p-2">No Polisi</th><th class="p-2">Unit</th><th class="p-2">SA</th><th class="p-2 text-right">Tagihan</th></tr>
-                    </thead>
+<thead class="bg-slate-50 text-slate-400 uppercase text-[7px] font-bold border-b">
+    <tr>
+        <th class="p-2 cursor-pointer hover:text-slate-900" onclick="sortRekap('tgl')">Tgl</th>
+        
+        <th id="th-mitra-rekap" class="p-2 cursor-pointer hover:text-slate-900 hidden" onclick="sortRekap('mitra')">Mitra</th>
+        
+        <th class="p-2 cursor-pointer hover:text-slate-900" onclick="sortRekap('noPol')">No Polisi</th>
+        <th class="p-2 cursor-pointer hover:text-slate-900" onclick="sortRekap('tipe')">Unit</th>
+        <th class="p-2 cursor-pointer hover:text-slate-900" onclick="sortRekap('sa')">SA</th>
+        <th class="p-2 text-right cursor-pointer hover:text-slate-900" onclick="sortRekap('total')">Tagihan</th>
+    </tr>
+</thead>
                     <tbody id="rekapTableBody" class="divide-y divide-slate-100 font-bold text-slate-700"></tbody>
                     <tfoot>
                         <tr class="bg-slate-900 text-white font-bold"><td colspan="4" class="p-2 text-right uppercase">Total Periode:</td> <td id="totalTagihanRekap" class="p-2 text-right">Rp 0</td></tr>
@@ -237,6 +249,125 @@
 </main>
 
 <script>
+let rekapSortAsc = true; // Untuk simpan status naik/turun
+
+function sortRekap(kolom) {
+    if (!currentFilteredData || currentFilteredData.length === 0) return;
+
+    // Balik status urutan (A-Z jadi Z-A)
+    rekapSortAsc = !rekapSortAsc;
+
+    currentFilteredData.sort((a, b) => {
+        let valA = a[kolom] || "";
+        let valB = b[kolom] || "";
+
+        // Jika kolom angka (seperti total tagihan)
+        if (typeof valA === 'number') {
+            return rekapSortAsc ? valA - valB : valB - valA;
+        }
+        
+        // Jika kolom teks (nopol, unit, sa)
+        return rekapSortAsc 
+            ? valA.toString().localeCompare(valB.toString()) 
+            : valB.toString().localeCompare(valA.toString());
+    });
+
+    // Gambar ulang isi tabel rekap setelah di-sort
+    renderIsiRekap();
+}
+
+
+function exportExcelRekap() {
+    if (!currentFilteredData || currentFilteredData.length === 0) return alert("Data rekap kosong!");
+
+    const bRaw = document.getElementById('rekapBengkel').value;
+    const namaBengkel = (bRaw === "ALL") ? "SELURUH BENGKEL" : bRaw;
+    const tglStart = document.getElementById('rekapStart').value;
+    const tglEnd = document.getElementById('rekapEnd').value;
+    let totalNominal = 0;
+
+    // 1. Desain Template Excel dengan CSS (Modern Style)
+    let excelTemplate = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                .title { font-family: Arial; font-size: 16pt; font-weight: bold; text-align: center; }
+                .subtitle { font-family: Arial; font-size: 10pt; text-align: center; color: #666; }
+                table { border-collapse: collapse; width: 100%; font-family: Arial; font-size: 9pt; }
+                th { background-color: #1e293b; color: #ffffff; border: 1px solid #000000; padding: 8px; text-transform: uppercase; }
+                td { border: 1px solid #cccccc; padding: 6px; }
+                .header-row { background-color: #f1f5f9; font-weight: bold; }
+                .total-row { background-color: #1e293b; color: #ffffff; font-weight: bold; }
+                .text-right { text-align: right; }
+                .text-center { text-align: center; }
+                .blue-text { color: #1e3a8a; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="title">REKAPITULASI TAGIHAN AC</div>
+            <div class="title" style="color: #1e3a8a;">${namaBengkel}</div>
+            <div class="subtitle">Periode: ${tglStart} s/d ${tglEnd}</div>
+            <br>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="100">TANGGAL</th>
+                        ${bRaw === "ALL" ? '<th width="200">MITRA BENGKEL</th>' : ''}
+                        <th width="120">NO POLISI</th>
+                        <th width="150">UNIT MOBIL</th>
+                        <th width="100">SA</th>
+                        <th width="120">TAGIHAN</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // 2. Masukkan Data ke dalam Baris Tabel
+    currentFilteredData.forEach(d => {
+        totalNominal += d.total;
+        excelTemplate += `
+            <tr>
+                <td class="text-center">${d.tgl.split('-').reverse().join('/')}</td>
+                ${bRaw === "ALL" ? `<td class="blue-text">${d.mitra}</td>` : ''}
+                <td style="font-weight: bold;">${d.noPol}</td>
+                <td>${d.tipe}</td>
+                <td>${d.sa || '-'}</td>
+                <td class="text-right">Rp ${d.total.toLocaleString()}</td>
+            </tr>
+        `;
+    });
+
+    // 3. Tambahkan Total Footer
+    excelTemplate += `
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="${bRaw === "ALL" ? 5 : 4}" class="text-right">TOTAL KESELURUHAN</td>
+                        <td class="text-right">Rp ${totalNominal.toLocaleString()}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <br>
+            <p style="font-size: 8pt; italic">Exported from SM Billing System: ${new Date().toLocaleString('id-ID')}</p>
+        </body>
+        </html>
+    `;
+
+    // 4. Proses Download sebagai file .xls (Langsung kebuka rapi di Excel)
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.href = url;
+    link.download = `REKAP_${namaBengkel}_${tglStart}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
+
 
 // --- SISTEM KEAMANAN LOGIN ---
 
@@ -487,25 +618,75 @@ function importData(e) {
     }
 
     // 6. FUNGSI REKAPAN (FIXED)
-    function prosesRekap() {
-        const b = document.getElementById('rekapBengkel').value;
-        const s = document.getElementById('rekapStart').value;
-        const e = document.getElementById('rekapEnd').value;
-        if(!s || !e) return alert("Pilih tanggal!");
-        
-        currentFilteredData = db.filter(d => d.mitra === b && d.tgl >= s && d.tgl <= e);
-        const tbody = document.getElementById('rekapTableBody'); 
-        tbody.innerHTML = ""; 
-        let t = 0;
-        
-        currentFilteredData.forEach(d => { 
-            t += d.total; 
-            tbody.innerHTML += `<tr><td class="p-2">${d.tgl}</td><td class="p-2">${d.noPol}</td><td class="p-2">${d.tipe}</td><td class="p-2">${d.sa || '-'}</td><td class="p-2 text-right">Rp ${d.total.toLocaleString()}</td></tr>`; 
-        });
-        
-        document.getElementById('totalTagihanRekap').innerText = `Rp ${t.toLocaleString()}`;
-        document.getElementById('hasilRekap').classList.remove('hidden');
+ function prosesRekap() {
+    const b = document.getElementById('rekapBengkel').value;
+    const s = document.getElementById('rekapStart').value;
+    const e = document.getElementById('rekapEnd').value;
+    
+    if(!s || !e) return alert("Pilih tanggal dulu, Bro!");
+
+    // 1. Filter Data
+    currentFilteredData = db.filter(d => {
+        const matchBengkel = (b === "ALL" || d.mitra === b);
+        const matchTanggal = (d.tgl >= s && d.tgl <= e);
+        return matchBengkel && matchTanggal;
+    });
+
+    // 2. Urutkan berdasarkan tanggal (Default)
+    currentFilteredData.sort((x, y) => new Date(x.tgl) - new Date(y.tgl));
+
+    // 3. Panggil fungsi untuk gambar tabelnya
+    renderIsiRekap();
+}
+
+
+// Fungsi khusus buat gambar baris di tabel rekap
+function renderIsiRekap() {
+    const b = document.getElementById('rekapBengkel').value;
+    const tbody = document.getElementById('rekapTableBody'); 
+    const thMitra = document.getElementById('th-mitra-rekap'); // Ambil ID judul kolom tadi
+    
+    if(!tbody) return;
+    
+    tbody.innerHTML = ""; 
+    let t = 0;
+
+    // Kontrol Judul Kolom Mitra: Munculkan jika ALL, sembunyikan jika Bengkel Satuan
+    if (b === "ALL") {
+        thMitra.classList.remove('hidden');
+    } else {
+        thMitra.classList.add('hidden');
     }
+    
+    currentFilteredData.forEach(d => { 
+        t += d.total; 
+        
+        // Buat kolom Mitra hanya jika pilih ALL
+        const kolomMitra = (b === "ALL") ? `<td class="p-2 font-bold text-blue-600">${d.mitra}</td>` : "";
+        
+        tbody.innerHTML += `
+            <tr>
+                <td class="p-2">${d.tgl.split('-').reverse().join('/')}</td>
+                
+                ${kolomMitra} <td class="p-2"><b>${d.noPol}</b></td>
+                <td class="p-2">${d.tipe}</td>
+                <td class="p-2 uppercase opacity-60">${d.sa || '-'}</td> 
+                <td class="p-2 text-right">Rp ${d.total.toLocaleString()}</td>
+            </tr>`; 
+    });
+    
+    // Update Total di Footer: Sesuaikan Colspan agar totalnya tetap lurus di kanan
+    const colspanValue = (b === "ALL") ? 5 : 4;
+    const footerRow = document.querySelector('#rekapModal tfoot tr');
+    if(footerRow) {
+        footerRow.innerHTML = `<td colspan="${colspanValue}" class="p-2 text-right uppercase">Total Periode:</td> <td id="totalTagihanRekap" class="p-2 text-right">Rp ${t.toLocaleString()}</td>`;
+    }
+
+    document.getElementById('hasilRekap').classList.remove('hidden');
+}
+
+
+
 
     // 7. FUNGSI KELOLA BENGKEL (FIXED)
     function addNewBengkel() {
@@ -548,7 +729,27 @@ function importData(e) {
     function resetForm() { document.getElementById('editIndex').value = "-1"; document.getElementById('noPol').value = ""; document.getElementById('tipeMobil').value = ""; document.getElementById('keluhan').value = ""; document.getElementById('partList').innerHTML = ""; addPartRow(); document.getElementById('tglKerja').value = new Date().toISOString().split('T')[0]; document.getElementById('formTitle').innerText = "Input Pengerjaan"; }
     function editData(idx) { const d = db[idx]; document.getElementById('editIndex').value = idx; document.getElementById('bengkelMitra').value = d.mitra; document.getElementById('noPol').value = d.noPol; document.getElementById('tipeMobil').value = d.tipe; document.getElementById('sa_name').value = d.sa || ""; document.getElementById('teknisi').value = d.teknisi || ""; document.getElementById('tglKerja').value = d.tgl; document.getElementById('keluhan').value = d.keluhan; document.getElementById('partList').innerHTML = ""; d.items.forEach(it => addPartRow(it.name, it.price)); document.getElementById('formTitle').innerText = "Edit Data " + d.id; window.scrollTo({top: 0, behavior: 'smooth'}); }
     function addPartRow(n = '', p = '') { const div = document.createElement('div'); div.className = "flex gap-1 items-center part-item-row"; div.innerHTML = `<input type="text" placeholder="Item" value="${n}" class="p-name w-2/3 p-1.5 border border-slate-200 uppercase text-[9px] outline-none"><input type="number" placeholder="Rp" value="${p}" class="p-price w-1/3 p-1.5 border border-slate-200 font-bold text-blue-800 text-[9px] outline-none"><button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-red-500 text-base">&times;</button>`; document.getElementById('partList').appendChild(div); }
-    function updateMitraSelects() { const selects = [document.getElementById('bengkelMitra'), document.getElementById('rekapBengkel'), document.getElementById('filterMitraUtama')]; selects.forEach(s => { if(!s) return; const cur = s.value; s.innerHTML = (s.id === 'filterMitraUtama') ? '<option value="ALL">-- SEMUA MITRA --</option>' : ""; mitraData.forEach(m => { const o = document.createElement('option'); o.value = m.nama; o.innerText = m.nama; s.appendChild(o); }); s.value = cur || (s.id === 'filterMitraUtama' ? 'ALL' : (s.options[0]?.value || "")); }); }
+    function updateMitraSelects() {
+    const selects = [
+        document.getElementById('bengkelMitra'), 
+        document.getElementById('rekapBengkel'), 
+        document.getElementById('filterMitraUtama')
+    ];
+    selects.forEach(s => {
+        if(!s) return;
+        const cur = s.value;
+        // Tambahkan "SEMUA MITRA" khusus untuk rekap dan filter utama
+        s.innerHTML = (s.id === 'rekapBengkel' || s.id === 'filterMitraUtama') 
+            ? '<option value="ALL">-- SEMUA MITRA --</option>' 
+            : "";
+            
+        mitraData.forEach(m => {
+            const o = document.createElement('option');
+            o.value = m.nama; o.innerText = m.nama; s.appendChild(o);
+        });
+        s.value = cur || (s.id === 'rekapBengkel' ? 'ALL' : (s.options[0]?.value || ""));
+    });
+}
     function sortData(c) { if (currentSortCol === c) isAsc = !isAsc; else { currentSortCol = c; isAsc = true; } document.querySelectorAll('thead th span').forEach(el => el.innerText = ""); const icon = document.getElementById(`sort-${c}`); if(icon) icon.innerText = isAsc ? " ↑" : " ↓"; renderTable(); }
     function debounceRender() { clearTimeout(timer); timer = setTimeout(renderTable, 300); }
     function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
@@ -828,42 +1029,45 @@ function generateKwitansi() {
 function printRekap() {
     if (!currentFilteredData || currentFilteredData.length === 0) return alert("Tampilkan data rekap dulu, baru cetak!");
 
-    const bengkel = document.getElementById('rekapBengkel').value;
+    const bRaw = document.getElementById('rekapBengkel').value;
+    // GANTI ALL MENJADI SELURUH BENGKEL UNTUK JUDUL
+    const namaBengkel = (bRaw === "ALL") ? "SELURUH BENGKEL" : bRaw;
     const tglStart = document.getElementById('rekapStart').value;
     const tglEnd = document.getElementById('rekapEnd').value;
     let totalNominal = 0;
+
+    // LOGIKA CEK APAKAH PERLU KOLOM MITRA
+    const isAll = (bRaw === "ALL");
 
     const win = window.open('', '_blank');
     win.document.write(`
         <html>
         <head>
-            <title>Cetak Rekap - ${bengkel}</title>
+            <title>Cetak Rekap - ${namaBengkel}</title>
             <style>
                 body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
                 .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-                th { background: #f1f5f9; text-transform: uppercase; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+                th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+                th { background: #f1f5f9; text-transform: uppercase; font-size: 9px; }
                 .text-right { text-align: right; }
                 .footer { margin-top: 30px; display: flex; justify-content: space-between; }
                 .total-row { background: #1e293b; color: white; font-weight: bold; }
-                @media print { .no-print { display: none; } }
             </style>
         </head>
         <body onload="window.print(); window.close();">
             <div class="header">
-                <h2 style="margin:0;">REKAPITULASI TAGIHAN</h2>
-                <h3 style="margin:5px 0; color: #1e3a8a;">${bengkel}</h3>
-                <p style="font-size: 10px;">Periode: ${tglStart} s/d ${tglEnd}</p>
+                <h2 style="margin:0; text-transform: uppercase;">REKAPITULASI TAGIHAN</h2>
+                <h3 style="margin:5px 0; color: #1e3a8a;">${namaBengkel}</h3>
+                <p style="font-size: 10px;">Periode: ${tglStart.split('-').reverse().join('/')} s/d ${tglEnd.split('-').reverse().join('/')}</p>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Tgl</th>
-                        <th>No Polisi</th>
+                        <th style="width: 60px;">Tgl</th>
+                        ${isAll ? '<th>Mitra</th>' : ''} <th>No Polisi</th>
                         <th>Unit</th>
-                        <th>SA / Teknisi</th>
-                        <th class="text-right">Tagihan</th>
+                        <th style="width: 80px;">SA</th> <th class="text-right" style="width: 90px;">Tagihan</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -871,10 +1075,11 @@ function printRekap() {
                         totalNominal += d.total;
                         return `
                             <tr>
-                                <td>${d.tgl}</td>
+                                <td>${d.tgl.split('-').reverse().join('/')}</td>
+                                ${isAll ? `<td style="font-weight:bold; color:#1e3a8a;">${d.mitra}</td>` : ''}
                                 <td><b>${d.noPol}</b></td>
                                 <td>${d.tipe}</td>
-                                <td>${d.sa || '-'} / ${d.teknisi || '-'}</td>
+                                <td>${d.sa || '-'}</td>
                                 <td class="text-right">Rp ${d.total.toLocaleString()}</td>
                             </tr>
                         `;
@@ -882,14 +1087,14 @@ function printRekap() {
                 </tbody>
                 <tfoot>
                     <tr class="total-row">
-                        <td colspan="4" class="text-right">TOTAL TAGIHAN:</td>
+                        <td colspan="${isAll ? 5 : 4}" class="text-right">TOTAL TAGIHAN:</td>
                         <td class="text-right">Rp ${totalNominal.toLocaleString()}</td>
                     </tr>
                 </tfoot>
             </table>
             <div class="footer">
-                <div>Dicetak pada: ${new Date().toLocaleString('id-ID')}</div>
-                <div style="text-align:center;">
+                <div style="font-size: 9px; font-style: italic;">Dicetak: ${new Date().toLocaleString('id-ID')}</div>
+                <div style="text-align:center; width: 150px;">
                     Hormat Kami,<br><br><br><br>
                     <b>( Yudiono )</b>
                 </div>
