@@ -75,8 +75,12 @@
             <button onclick="closeSettings()" class="text-slate-400 font-bold text-xl">&times;</button>
         </div>
         <div class="space-y-3">
-            <input type="text" id="newBengkelName" placeholder="NAMA BENGKEL..." class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] uppercase font-bold">
-            <textarea id="newBengkelAddr" placeholder="ALAMAT LENGKAP..." class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] h-16 italic"></textarea>
+            <input type="text" id="newBengkelName" placeholder="Nama Bengkel | contoh : Isuzu Sunter" class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px]">
+            <textarea id="newBengkelAddr" placeholder="Nama Mitra & Alamat | contoh :
+PT. Astra International Tbk
+Jl. Jendral Sudirman Kav 5-6, Jakarta Pusat
+
+" class="w-full p-2 bg-slate-50 border border-slate-200 outline-none text-[9px] h-16 italic"></textarea>
             <button onclick="addNewBengkel()" class="w-full bg-blue-600 text-white py-2 font-bold text-[9px] uppercase">Tambah Bengkel</button>
             <div class="border-t pt-3">
                 <div id="bengkelListSettings" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
@@ -454,7 +458,16 @@ function logoutSistem() {
 
 
 function exportData() {
-    // 1. Siapkan data yang mau di-backup
+    // 1. Ambil tanggal hari ini
+    const d = new Date();
+    const tgl = String(d.getDate()).padStart(2, '0');
+    const bln = String(d.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+    const thn = d.getFullYear();
+    
+    // Format dd-mm-yyyy
+    const formatTgl = `${tgl}-${bln}-${thn}`;
+
+    // 2. Siapkan data backup (tetap sama)
     const backup = {
         db: db,
         mitra: mitraData,
@@ -462,29 +475,25 @@ function exportData() {
         app_name: "SEDJAHTERA_MOTOR_PRO"
     };
 
-    // 2. Ubah data jadi teks JSON
     const dataStr = JSON.stringify(backup, null, 2);
-    
-    // 3. Buat file bayangan (Blob)
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     
-    // 4. Buat tombol klik otomatis
+    // 3. Buat nama file dengan format baru
     const dl = document.createElement('a');
-    const fileName = `BACKUP_SM_CLOUD_${new Date().toISOString().slice(0,10)}.json`;
+    const jam = String(d.getHours()).padStart(2, '0');
+const min = String(d.getMinutes()).padStart(2, '0');
+const fileName = `Backup_SM_${formatTgl}_${jam}${min}.json`;
     
     dl.href = url;
     dl.download = fileName;
     
-    // 5. Eksekusi download tanpa pop-up (langsung ke folder download)
     document.body.appendChild(dl);
     dl.click();
-    
-    // 6. Bersihkan memori
     document.body.removeChild(dl);
     URL.revokeObjectURL(url);
 
-    console.log("Backup otomatis berhasil disimpan ke folder Download!");
+    console.log("Backup berhasil: " + fileName);
 }
 
 
@@ -553,7 +562,7 @@ function importData(e) {
                 
                 table.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b border-slate-50">
-                        <td class="col-tgl opacity-40 font-mono text-[8px]">${data.tgl}</td>
+                        <td class="col-tgl opacity-40 font-mono text-[8px]">${data.tgl.split('-').reverse().join('-')}</td>
                         <td class="col-mitra uppercase text-blue-800 font-bold">${data.mitra}</td>
                         <td class="col-unit">
                             <div class="text-emerald-700 font-bold leading-none">${data.tipe}</div>
@@ -669,7 +678,7 @@ function renderIsiRekap() {
                 <td class="p-2">${d.tgl.split('-').reverse().join('/')}</td>
                 
                 ${kolomMitra} <td class="p-2"><b>${d.noPol}</b></td>
-                <td class="p-2">${d.tipe}</td>
+                <td class="p-2">${d.tgl.split('-').reverse().join('-')}</td>
                 <td class="p-2 uppercase opacity-60">${d.sa || '-'}</td> 
                 <td class="p-2 text-right">Rp ${d.total.toLocaleString()}</td>
             </tr>`; 
@@ -701,24 +710,30 @@ function renderIsiRekap() {
         }
     }
 
-    function renderSettingsList() {
-        const list = document.getElementById('bengkelListSettings'); 
-        if(!list) return;
-        list.innerHTML = "";
-        mitraData.forEach((m) => { 
-            list.innerHTML += `
-                <div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
-                    <div class="flex-1">
-                        <span class="text-blue-700 font-bold text-[9px]">${m.nama}</span>
-                        <p class="text-[7px] text-slate-400 italic truncate max-w-[180px]">${m.alamat || '-'}</p>
-                    </div>
-                    <div class="flex gap-2 items-center">
-                        <button onclick="editBengkelCloud('${m.fbKey}', '${m.nama}', '${m.alamat || ''}')" class="text-blue-500 font-bold text-[9px]">EDIT</button>
-                        <button onclick="hapusBengkelCloud('${m.fbKey}')" class="text-red-400 text-lg">&times;</button>
-                    </div>
-                </div>`; 
-        });
-    }
+function renderSettingsList() {
+    const list = document.getElementById('bengkelListSettings'); 
+    if(!list) return;
+    list.innerHTML = "";
+    
+    mitraData.forEach((m) => { 
+        // KUNCI PERBAIKAN: Gunakan backtick (`) dan escape karakter 
+        // supaya teks alamat yang ada Enter-nya tidak merusak fungsi EDIT
+        const safeAlamat = (m.alamat || '').replace(/'/g, "\\'").replace(/\n/g, "\\n");
+        const safeNama = m.nama.replace(/'/g, "\\'");
+
+        list.innerHTML += `
+            <div class="bg-slate-50 p-2 border border-slate-200 flex justify-between items-center mb-1">
+                <div class="flex-1">
+                    <span class="text-blue-700 font-bold text-[9px]">${m.nama}</span>
+                    <p class="text-[7px] text-slate-400 italic truncate max-w-[180px]">${m.alamat || '-'}</p>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <button onclick='editBengkelCloud("${m.fbKey}", "${safeNama}", "${safeAlamat}")' class="text-blue-500 font-bold text-[9px]">EDIT</button>
+                    <button onclick="hapusBengkelCloud('${m.fbKey}')" class="text-red-400 text-lg">&times;</button>
+                </div>
+            </div>`; 
+    });
+}
 
     // UTILS LAINNYA
     function toggleStatus(idx) { dbSedjahtera.child('pengerjaan/' + db[idx].fbKey).update({ status: db[idx].status === 'LUNAS' ? 'BELUM' : 'LUNAS' }); }
