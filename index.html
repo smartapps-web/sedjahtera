@@ -262,6 +262,50 @@ Jl. Jendral Sudirman Kav 5-6, Jakarta Pusat
 </main>
 
 <script>
+
+
+// --- SISTEM PROTEKSI KODING (ANTI KLIK KANAN & SHORTCUT) ---
+
+// 1. Blokir Klik Kanan (Context Menu)
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+}, false);
+
+// 2. Blokir Shortcut Keyboard (F12, Ctrl+U, Ctrl+Shift+I, Ctrl+S)
+document.onkeydown = function(e) {
+    // Blokir F12 (DevTools)
+    if (e.keyCode == 123) {
+        return false;
+    }
+    // Blokir Ctrl+Shift+I (Inspect Element)
+    if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+        return false;
+    }
+    // Blokir Ctrl+Shift+J (Console)
+    if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
+        return false;
+    }
+    // Blokir Ctrl+U (View Source)
+    if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+        return false;
+    }
+    // Blokir Ctrl+S (Save Page) - Biar kodingan gak didownload sembarangan
+    if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) {
+        return false;
+    }
+};
+
+// 3. Tambahan: Deteksi kalau DevTools terbuka (Opsional/Bonus)
+// Jika user memaksa buka DevTools lewat menu browser, kita refresh halamannya
+/*
+setInterval(function(){
+    if(window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160){
+        location.reload();
+    }
+}, 1000);
+*/
+
+
 let rekapSortAsc = true; // Untuk simpan status naik/turun
 
 function sortRekap(kolom) {
